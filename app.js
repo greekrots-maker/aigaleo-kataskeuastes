@@ -201,7 +201,7 @@ function renderFav(){var fs=C.filter(function(c){return isFav(c.name)});
  $('favlist').innerHTML=h}
 // ---------- team view ----------
 function pl(n,a,b){return n+' '+(n===1?a:b)}
-function renderTeam(){var A=allAcc(),accs=Object.keys(A).sort(function(a,b){return a-b});
+function renderTeam(){var A=allAcc(),accs=Object.keys(A).filter(function(a){return a===String(ACC)||Object.keys(A[a]).some(function(n){return active(A[a][n])})}).sort(function(a,b){return a-b});
  var h='<div class="panel"><h2>👥 Ομάδα</h2>';
  if(!Sync.url())h+='<p class="small">⚠ Ο κοινός συγχρονισμός δεν έχει ενεργοποιηθεί ακόμη: βλέπεις μόνο τα δικά σου (Λογ. '+esc(ACC)+'). Μόλις ενεργοποιηθεί, εδώ θα φαίνονται οι κλήσεις και οι προσφορές όλων.</p>';
  else h+='<p class="small">Τελευταία ενημέρωση: '+(team.at?fdt(team.at):'—')+'. Ανανεώνεται αυτόματα κάθε λεπτό.</p>';
@@ -283,7 +283,7 @@ var Sync=(function(){
   else if(state==='busy'){cls='busy';txt='συγχρονισμός…'}
   else if(state==='off'){cls='off';txt='εκτός σύνδεσης'+(p?' · '+p+' σε αναμονή':'')}
   else if(state==='err'){cls='err';txt='σφάλμα'+(p?' · '+p+' σε αναμονή':'')}
-  else if(state==='ok'){cls=p?'busy':'ok';txt=p?p+' σε αναμονή':'✓ συγχρονίστηκε '+ftime(last)}
+  else if(state==='ok'){cls=p?'busy':'ok';txt=p?p+' σε αναμονή':'✓ συγχρονισμένο '+ftime(last)}
   else{cls='busy';txt=p?p+' σε αναμονή':'σύνδεση…'}
   el.className='sc sc-'+cls;el.textContent=txt;var st=$('syncstat');if(st)st.textContent=txt+(err&&state==='err'?' ('+err+')':'')}
  function req(u,opt){var ac=window.AbortController?new AbortController():null;var to=setTimeout(function(){if(ac)ac.abort()},20000);if(ac)opt.signal=ac.signal;
@@ -347,6 +347,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=5').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=6').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();
