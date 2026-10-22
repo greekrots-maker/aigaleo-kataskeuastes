@@ -1,7 +1,7 @@
-// Service worker v6 – η σελίδα (HTML) πάντα από το δίκτυο όταν υπάρχει σύνδεση (ποτέ παλιά έκδοση),
+// Service worker v7 – η σελίδα (HTML) πάντα από το δίκτυο όταν υπάρχει σύνδεση (ποτέ παλιά έκδοση),
 // με αντίγραφο για χρήση χωρίς σύνδεση. Στατικά αρχεία από την cache.
-var V='kat-v6b';
-var CORE=['./','./app.css?v=6b','./app.js?v=6b','./manifest.webmanifest?v=6b','./icons/apple-touch-icon.png?v=6b','./icons/favicon-64.png?v=6b','./icons/icon-192.png?v=6b','./vendor/leaflet/leaflet.js?v=1.9.4','./vendor/leaflet/leaflet.css?v=1.9.4'];
+var V='kat-v7';
+var CORE=['./','./app.css?v=7','./app.js?v=7','./manifest.webmanifest?v=7','./icons/apple-touch-icon.png?v=7','./icons/favicon-64.png?v=7','./icons/icon-192.png?v=7','./vendor/leaflet/leaflet.js?v=1.9.4','./vendor/leaflet/leaflet.css?v=1.9.4'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(V).then(function(c){return c.addAll(CORE)}).then(function(){return self.skipWaiting()}))});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==V}).map(function(k){return caches.delete(k)}))}).then(function(){return self.clients.claim()}))});
 self.addEventListener('fetch',function(e){var r=e.request;if(r.method!=='GET')return;var u=new URL(r.url);if(u.origin!==location.origin)return;
