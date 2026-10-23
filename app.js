@@ -27,7 +27,9 @@ function loadAcct(n){ACC=n;var s=lsGet('kat5_a'+n,{});recs=s.recs||{};dirty=s.di
 function persist(){lsSet('kat5_a'+ACC,{recs:recs,dirty:dirty})}
 function rec(n){return recs[n]||{}}
 function change(n,fn){var r=recs[n]||(recs[n]={});fn(r);r.u=Date.now();dirty[n]=1;persist();Sync.soon();updStats()}
-function isFav(n){return !!rec(n).fav}
+function isBl(n){return !!rec(n).bl}
+function blCount(){var k=0;C.forEach(function(c){if(isBl(c.name))k++});return k}
+function isFav(n){return !!rec(n).fav&&!rec(n).bl}
 function favCount(){var k=0;C.forEach(function(c){if(isFav(c.name))k++});return k}
 var OF=[
  {k:'pct',l:'Ποσοστό αντιπαροχής για μένα (%)',t:'num',best:'max',ph:'π.χ. 35'},
@@ -49,7 +51,7 @@ function hasOffer(r){if(!r||!r.offer)return false;for(var k in r.offer)if(String
 function lastCall(r){var c=(r&&r.calls)||[];var m=null;c.forEach(function(x){if(!m||x.at>m.at)m=x});return m}
 // team helpers
 function allAcc(){var A={};Object.keys(team.accounts||{}).forEach(function(a){A[a]=team.accounts[a]});A[String(ACC)]=recs;return A}
-function active(r){return r&&(r.called||(r.calls&&r.calls.length)||hasOffer(r)||r.fav||(r.note&&r.note.trim()))}
+function active(r){return r&&(r.bl||r.called||(r.calls&&r.calls.length)||hasOffer(r)||r.fav||(r.note&&r.note.trim()))}
 function othersCalled(n){var out=[];var A=team.accounts||{};Object.keys(A).forEach(function(a){if(a===String(ACC))return;var r=A[a][n];if(r&&(r.called||(r.calls&&r.calls.length)))out.push({a:a,r:r})});return out}
 // ---------- filters ----------
 var F={trust:{},ant:'',area:'',new:false,todo:false,nobody:false,q:'',only:'',sort:'prio'};
@@ -58,6 +60,7 @@ var sel=$('area');
 ['Αιγάλεω','Χαϊδάρι','Περιστέρι','Πετρούπολη','Ίλιον','Αγ. Ανάργυροι / Καματερό','Νίκαια / Κορυδαλλός','Άλλη Αττική'].forEach(function(a){if(areas[a]){var o=document.createElement('option');o.value=a;o.textContent=a+' ('+areas[a]+')';sel.appendChild(o)}});
 var hay={};C.forEach(function(c){hay[c.name]=norm([c.name,c.area,c.address,c.whatdo,c.services,c.gemi,c.summary,c.projects.map(function(p){return p.html.replace(/<[^>]+>/g,'')}).join(' '),c.phones_raw].join(' '))});
 function passes(c){
+  if(isBl(c.name))return false;
   if(F.only)return c.name===F.only;
   var tf=Object.keys(F.trust).filter(function(k){return F.trust[k]});
   if(tf.length&&tf.indexOf(c.trust)<0)return false;
@@ -71,7 +74,7 @@ function passes(c){
 function nFilters(){var n=Object.keys(F.trust).filter(function(k){return F.trust[k]}).length;if(F.ant)n++;if(F.area)n++;if(F.new)n++;if(F.todo)n++;if(F.nobody)n++;if(F.sort!=='prio')n++;return n}
 function ordered(){var a=C.slice();if(F.sort==='dist')a.sort(function(x,y){return (x.near?x.near.km:1e9)-(y.near?y.near.km:1e9)||x.prio-y.prio});return a}
 // ---------- cards ----------
-var UI={offer:{},more:{},log:{}};
+var UI={offer:{},more:{},log:{},bl:{}};
 function star(n,cls){var f=isFav(n);return '<button type="button" class="favbtn'+(f?' on':'')+(cls?' '+cls:'')+'" data-n="'+esc(n)+'" aria-pressed="'+f+'" aria-label="'+(f?'Αφαίρεση από τα αγαπημένα':'Προσθήκη στα αγαπημένα')+'">'+(f?'★':'☆')+'</button>'}
 function trustB(c){return '<span class="tb t-'+c.trust+'">'+c.trust+'</span>'}
 function photos(c){if(!c.photos||!c.photos.length)return '';
@@ -106,6 +109,7 @@ function card(c){
  h+='<div class="mine"><h3>Η δουλειά μου · Λογαριασμός '+esc(ACC)+'</h3><div class="mrow"><button type="button" class="called'+(r.called?' on':'')+'" aria-pressed="'+(!!r.called)+'"><span class="box">'+(r.called?'✓':'')+'</span>Κάλεσα'+(r.called&&r.calledAt?' <small>'+fdt(r.calledAt)+'</small>':'')+'</button><button type="button" class="minibtn l-open">＋ Καταγραφή κλήσης</button></div>';
  if(UI.log[n])h+=logForm(c);
  h+=callList(r);
+ h+=(UI.bl&&UI.bl[n])?'<div class="blform"><input class="blr" type="text" maxlength="140" placeholder="Λόγος (προαιρετικό), π.χ. ζήτησε πολλά" aria-label="Λόγος για τη μαύρη λίστα"><div class="row"><button type="button" class="minibtn danger bl-ok">⛔ Προσθήκη στη μαύρη λίστα</button><button type="button" class="minibtn bl-x">Άκυρο</button></div></div>':'<div class="row"><button type="button" class="minibtn blbtn">⛔ Μαύρη λίστα</button></div>';
  h+='<textarea class="note" placeholder="Σημειώσεις (ραντεβού, εντυπώσεις…)" rows="2">'+esc(r.note||'')+'</textarea>';
  h+='<details class="offer"'+(UI.offer[n]?' open':'')+'><summary>'+offerSum(r)+'</summary>'+(UI.offer[n]?offerForm(c,r):'')+'</details></div>';
  h+='</div><details class="more"'+(UI.more[n]?' open':'')+'><summary>Πλήρης κάρτα: ΓΕΜΗ, έργα, πηγές</summary><div class="body">'+(UI.more[n]?fullBody(c):'')+'</div></details></article>';
@@ -131,11 +135,12 @@ function updStats(){var mine=0,offers=0;C.forEach(function(c){var r=rec(c.name);
  var ms=$('mystats');if(ms)ms.textContent='Εσύ (Λογ. '+ACC+'): '+pl(mine,'κλήση','κλήσεις')+' · '+pl(offers,'προσφορά','προσφορές')+' · Ομάδα: '+Object.keys(tc).length+'/'+C.length+' εταιρείες σε επαφή';
  var fb=$('favn'),fc=favCount();fb.textContent=fc;fb.hidden=!fc;
  var cb=$('calln');if(cb){var cn=calledList().length;cb.textContent=cn;cb.hidden=!cn}
+ var bb=$('bln');if(bb){var bn=blCount();bb.textContent=bn;bb.hidden=!bn}
  var tn=0;C.forEach(function(c){if(othersCalled(c.name).length)tn++});var tb=$('teamn');tb.textContent=tn;tb.hidden=!tn}
 function render(){
  var out=[];ordered().forEach(function(c){if(passes(c))out.push(card(c))});
  var called=C.filter(function(c){var r=rec(c.name);return r.called||(r.calls&&r.calls.length)}).length;
- $('count').textContent='Εμφανίζονται '+out.length+' από '+C.length+' · Κάλεσες '+called+'/'+C.length+(F.sort==='dist'?' · σειρά: πιο κοντά στο οικόπεδο':'');
+ var nb=blCount();$('count').textContent='Εμφανίζονται '+out.length+' από '+(C.length-nb)+(nb?' (+'+nb+' στη μαύρη λίστα)':'')+' · Κάλεσες '+called+'/'+C.length+(F.sort==='dist'?' · σειρά: πιο κοντά στο οικόπεδο':'');
  $('cards').innerHTML=out.join('')||'<div class="empty"><span class="ei">🔎</span><b>Καμία εταιρεία</b>Δεν βρέθηκε αποτέλεσμα με αυτά τα φίλτρα.<div class="row" style="justify-content:center"><button class="minibtn" type="button" data-reset="1">Καθαρισμός φίλτρων</button></div></div>';
  var ob=$('onlybar');if(F.only){ob.hidden=false;ob.innerHTML='<span>Μόνο: <b>'+esc(F.only)+'</b></span><button type="button" id="onlyx">✕ Όλες</button>'}else{ob.hidden=true;ob.innerHTML=''}
  var fc=nFilters(),fe=$('fcount');fe.textContent=fc;fe.hidden=!fc;
@@ -157,6 +162,9 @@ fl.addEventListener('click',function(e){var b=e.target.closest('.chip');if(!b)re
 function cardOf(el){var a=el.closest('.card');if(!a)return null;var c=byPrio(+a.dataset.p);return c?{a:a,c:c,n:c.name}:null}
 var cards=$('cards');
 cards.addEventListener('click',function(e){var x=cardOf(e.target);if(!x)return;var n=x.n,t;
+ if(e.target.closest('.blbtn')){UI.bl[n]=true;updCard(n);var bi=document.querySelector('#c'+x.c.prio+' .blr');if(bi)bi.focus();return}
+ if(e.target.closest('.bl-x')){UI.bl[n]=false;updCard(n);return}
+ if(e.target.closest('.bl-ok')){var inp=x.a.querySelector('.blr'),why=inp?inp.value.trim():'';UI.bl[n]=false;change(n,function(r){r.bl=Date.now();r.blr=why});refresh();toast('⛔ Μπήκε στη μαύρη λίστα: '+n);return}
  if((t=e.target.closest('.called'))){var on=!rec(n).called;change(n,function(r){r.called=on;r.calledAt=on?Date.now():null});updCard(n);toast(on?'✓ Σημειώθηκε κλήση':'Αφαιρέθηκε το «Κάλεσα»');return}
  if(e.target.closest('.l-open')){UI.log[n]=!UI.log[n];updCard(n);if(UI.log[n]){var s=$('c'+x.c.prio).querySelector('.l-out');if(s)s.focus()}return}
  if(e.target.closest('.l-cancel')){UI.log[n]=false;updCard(n);return}
@@ -178,6 +186,7 @@ document.addEventListener('click',function(e){var b=e.target.closest('.favbtn');
  if(e.target.closest('[data-reset]')){resetF();return}
  var o=e.target.closest('.open[data-n],.fopen');if(o){openCompany(o.dataset.n);return}
  var m=e.target.closest('.fmap');if(m){show('map');focusCompany(byName(m.dataset.n));return}
+ var br=e.target.closest('.blrest');if(br){var bn=br.dataset.n;change(bn,function(r){r.bl=0;r.blr=''});refresh();if(cur==='black')renderBlack();toast('↩ Επανήλθε: '+bn);return}
  var g=e.target.closest('[data-go]');if(g){e.preventDefault();show(g.dataset.go)}},true);
 function toggleFav(n){var f=!isFav(n);change(n,function(r){r.fav=f});
  document.querySelectorAll('.favbtn').forEach(function(b){if(b.dataset.n===n){b.classList.toggle('on',f);b.textContent=f?'★':'☆';b.setAttribute('aria-pressed',f);b.setAttribute('aria-label',f?'Αφαίρεση από τα αγαπημένα':'Προσθήκη στα αγαπημένα')}});
@@ -202,7 +211,7 @@ function renderFav(){var fs=C.filter(function(c){return isFav(c.name)});
  $('favlist').innerHTML=h}
 // ---------- called view ----------
 function callTime(r){var lc=lastCall(r);return Math.max(lc?lc.at:0,r.calledAt||0)}
-function calledList(){return C.filter(function(c){var r=rec(c.name);return r&&(r.called||(r.calls&&r.calls.length))}).sort(function(a,b){return callTime(rec(b.name))-callTime(rec(a.name))})}
+function calledList(){return C.filter(function(c){var r=rec(c.name);return r&&!r.bl&&(r.called||(r.calls&&r.calls.length))}).sort(function(a,b){return callTime(rec(b.name))-callTime(rec(a.name))})}
 function renderCalled(){var ls=calledList();
  if(!ls.length){$('calledlist').innerHTML='<div class="empty"><span class="ei">📞</span><b>Δεν έχεις καλέσει καμία εταιρεία ακόμη</b>Όταν πατήσεις «Κάλεσα» ή «＋ Καταγραφή κλήσης» σε μια κάρτα, η εταιρεία θα εμφανιστεί εδώ, με την πιο πρόσφατη κλήση πρώτη.<div class="row" style="justify-content:center"><button class="minibtn pri" type="button" data-go="list">Στη λίστα</button></div></div>';return}
  var h='<div class="panel"><h2>📞 Κάλεσα <span class="small">('+ls.length+')</span></h2><p class="small">Του Λογαριασμού '+esc(ACC)+', πιο πρόσφατη κλήση πρώτη. Συγχρονίζονται με την ομάδα.</p></div>';
@@ -213,14 +222,23 @@ function renderCalled(){var ls=calledList();
   if(r.note)h+='<div class="fnote">📝 '+esc(r.note)+'</div>';
   h+='<div class="actions">'+phoneBtns(c,false)+'</div><div class="row"><button type="button" class="minibtn fopen" data-n="'+esc(c.name)+'">Άνοιγμα κάρτας</button></div></article>'});
  $('calledlist').innerHTML=h}
+// ---------- blacklist view ----------
+function renderBlack(){var ls=C.filter(function(c){return isBl(c.name)}).sort(function(a,b){return rec(b.name).bl-rec(a.name).bl});
+ if(!ls.length){$('blacklist').innerHTML='<div class="empty"><span class="ei">⛔</span><b>Η μαύρη λίστα είναι άδεια</b>Πάτα «⛔ Μαύρη λίστα» σε μια κάρτα για να την κρύψεις από τη Λίστα, τον Χάρτη, τα Αγαπημένα και τα «Κάλεσα». Μπορείς να την επαναφέρεις από εδώ.</div>';return}
+ var h='<div class="panel"><h2>⛔ Μαύρη λίστα <span class="small">('+ls.length+')</span></h2><p class="small">Του Λογαριασμού '+esc(ACC)+'. Αυτές οι εταιρείες δεν εμφανίζονται στη Λίστα, στον Χάρτη, στα Αγαπημένα και στα «Κάλεσα». Συγχρονίζονται με την ομάδα.</p></div>';
+ ls.forEach(function(c){var r=rec(c.name);
+  h+='<article class="fcard blk"><div class="row1"><div class="prio">'+c.prio+'</div><div class="hn"><h2>'+esc(c.name)+'</h2><div class="tags">'+trustB(c)+'<span class="tag flag">⛔ '+fdt(r.bl)+'</span></div></div></div>';
+  h+='<div class="fnote">'+(r.blr?'Λόγος: '+esc(r.blr):'Χωρίς λόγο')+'</div>';
+  h+='<div class="row"><button type="button" class="minibtn pri blrest" data-n="'+esc(c.name)+'">↩ Επαναφορά</button></div></article>'});
+ $('blacklist').innerHTML=h}
 // ---------- team view ----------
 function pl(n,a,b){return n+' '+(n===1?a:b)}
 function renderTeam(){var A=allAcc(),accs=Object.keys(A).filter(function(a){return a===String(ACC)||Object.keys(A[a]).some(function(n){return active(A[a][n])})}).sort(function(a,b){return a-b});
  var h='<div class="panel"><h2>👥 Ομάδα</h2>';
  if(!Sync.url())h+='<p class="small">⚠ Ο κοινός συγχρονισμός δεν έχει ενεργοποιηθεί ακόμη: βλέπεις μόνο τα δικά σου (Λογ. '+esc(ACC)+'). Μόλις ενεργοποιηθεί, εδώ θα φαίνονται οι κλήσεις και οι προσφορές όλων.</p>';
  else h+='<p class="small">Τελευταία ενημέρωση: '+(team.at?fdt(team.at):'—')+'. Ανανεώνεται αυτόματα κάθε λεπτό.</p>';
- h+='<div class="tsum">';accs.forEach(function(a){var calls=0,offers=0,cos=0,favs=0,clc=0;Object.keys(A[a]).forEach(function(n){var r=A[a][n];if(!r||!active(r))return;cos++;if(r.fav)favs++;if(r.called||(r.calls&&r.calls.length))clc++;calls+=(r.calls||[]).length;if(hasOffer(r))offers++});
-  h+='<div class="'+(a===String(ACC)?'me':'')+'"><b>Λογαριασμός '+esc(a)+'</b>'+pl(cos,'εταιρεία','εταιρείες')+' · '+favs+' ★ · '+pl(clc,'κλήθηκε','κλήθηκαν')+' · '+pl(calls,'κλήση','κλήσεις')+' · '+pl(offers,'προσφορά','προσφορές')+'</div>'});
+ h+='<div class="tsum">';accs.forEach(function(a){var calls=0,offers=0,cos=0,favs=0,clc=0,bls=0;Object.keys(A[a]).forEach(function(n){var r=A[a][n];if(!r||!active(r))return;if(r.bl){bls++;return}cos++;if(r.fav)favs++;if(r.called||(r.calls&&r.calls.length))clc++;calls+=(r.calls||[]).length;if(hasOffer(r))offers++});
+  h+='<div class="'+(a===String(ACC)?'me':'')+'"><b>Λογαριασμός '+esc(a)+'</b>'+pl(cos,'εταιρεία','εταιρείες')+' · '+favs+' ★ · '+pl(clc,'κλήθηκε','κλήθηκαν')+' · '+pl(calls,'κλήση','κλήσεις')+' · '+pl(offers,'προσφορά','προσφορές')+(bls?' · ⛔ '+bls:'')+'</div>'});
  h+='</div></div>';
  var rows=[];C.forEach(function(c){var acts=[],last=0;accs.forEach(function(a){var r=A[a][c.name];if(!active(r))return;if(!(r.called||(r.calls&&r.calls.length)||hasOffer(r)))return;acts.push({a:a,r:r});last=Math.max(last,r.u||0)});if(acts.length)rows.push({c:c,acts:acts,last:last})});
  rows.sort(function(x,y){return y.last-x.last});
@@ -234,12 +252,14 @@ function renderTeam(){var A=allAcc(),accs=Object.keys(A).filter(function(a){retu
    if(hasOffer(r))h+='<br>💼 '+[o.pct?o.pct+'%':'',o.sqm?o.sqm+' τ.μ.':'',o.units||'',o.months?o.months+' μήνες':'',o.guar?'εγγυητική: '+o.guar:''].filter(Boolean).map(esc).join(' · ');
    h+='</div>'});
   h+='</div>'});
+ var bh='';accs.forEach(function(a){var L=Object.keys(A[a]).filter(function(n){var r=A[a][n];return r&&r.bl&&byName(n)});if(L.length)bh+='<div class="tact'+(a===String(ACC)?' me':'')+'"><span class="who">Λογαριασμός '+esc(a)+'</span><br>'+L.map(function(n){var r=A[a][n];return '⛔ '+esc(n)+(r.blr?' – '+esc(r.blr):'')}).join('<br>')+'</div>'});
+ if(bh)h+='<div class="tcomp"><h3>⛔ Μαύρες λίστες</h3>'+bh+'</div>';
  $('teamview').innerHTML=h}
 // ---------- views ----------
-var cur='list',VIEWS=['list','fav','called','team','map','compare','menu'];
+var cur='list',VIEWS=['list','fav','called','team','map','compare','black','menu'];
 function show(v){if(VIEWS.indexOf(v)<0)v='list';cur=v;VIEWS.forEach(function(x){$('v-'+x).hidden=(x!==v)});document.body.setAttribute('data-view',v);
- document.querySelectorAll('#tabs a').forEach(function(a){var on=a.dataset.v===v||(v==='compare'&&a.dataset.v==='menu');a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
- if(v==='list'&&listStale){listStale=false;render()}if(v==='map')initMap();if(v==='compare')renderCompare();if(v==='fav')renderFav();if(v==='called')renderCalled();if(v==='team')renderTeam();if(v==='menu')renderMenu();
+ document.querySelectorAll('#tabs a').forEach(function(a){var on=a.dataset.v===v||((v==='compare'||v==='black')&&a.dataset.v==='menu');a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+ if(v==='list'&&listStale){listStale=false;render()}if(v==='map')initMap();if(v==='compare')renderCompare();if(v==='fav')renderFav();if(v==='called')renderCalled();if(v==='black')renderBlack();if(v==='team')renderTeam();if(v==='menu')renderMenu();
  if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);window.scrollTo(0,0)}
 $('tabs').addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;e.preventDefault();if(a.dataset.v===cur&&cur==='list'){window.scrollTo({top:0,behavior:'smooth'});return}show(a.dataset.v)});
 window.addEventListener('hashchange',function(){var v=location.hash.slice(1);if(v&&v!==cur)show(v)});
@@ -321,7 +341,7 @@ var Sync=(function(){
  function soon(){chip();if(!url())return;clearTimeout(t);t=setTimeout(run,1200)}
  return {run:run,soon:soon,url:url,chip:chip,pending:pending,setUrl:function(v){lsSet('kat5_url',v||'');chip()}}})();
 function editing(){var a=document.activeElement;return a&&a.closest&&a.closest('#cards')&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)}
-function refresh(){if(cur==='list')render();else{updStats();if(cur==='fav')renderFav();if(cur==='called')renderCalled();if(cur==='team')renderTeam();if(cur==='compare')renderCompare();if(cur==='map'&&mapReady)drawMarkers();listStale=true}}
+function refresh(){if(cur==='list')render();else{updStats();if(cur==='fav')renderFav();if(cur==='called')renderCalled();if(cur==='black')renderBlack();if(cur==='team')renderTeam();if(cur==='compare')renderCompare();if(cur==='map'&&mapReady)drawMarkers();listStale=true}}
 var listStale=false;
 window.addEventListener('online',function(){Sync.soon()});window.addEventListener('offline',function(){Sync.chip()});
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&ACC)Sync.soon()});
@@ -350,7 +370,7 @@ $('loginf').addEventListener('submit',async function(e){e.preventDefault();var v
  if(!/^\d{1,3}$/.test(v)||!(n>=1&&n<=999)){$('lerr').textContent='Γράψε έναν αριθμό από 1 έως 999.';return}
  if(ACC&&n!==ACC&&Sync.pending()&&Sync.url()){await Sync.run()}
  login(n)});
-function login(n){lsSet('kat5_acct',n);loadAcct(n);migrateV4();$('acctn').textContent=n;$('login').hidden=true;UI={offer:{},more:{},log:{}};F.only='';render();show(cur);Sync.chip();if(Sync.url())Sync.run();toast('Λογαριασμός '+n)}
+function login(n){lsSet('kat5_acct',n);loadAcct(n);migrateV4();$('acctn').textContent=n;$('login').hidden=true;UI={offer:{},more:{},log:{},bl:{}};F.only='';render();show(cur);Sync.chip();if(Sync.url())Sync.run();toast('Λογαριασμός '+n)}
 function migrateV4(){if(localStorage.getItem('kat5_migrated'))return;var old=lsGet('kat_aigaleo_v1',null);if(!old||!Object.keys(old).length){try{localStorage.setItem('kat5_migrated','none')}catch(e){}return}
  var k=0;Object.keys(old).forEach(function(n){var o=old[n];if(!byName(n)||!o)return;var r=recs[n]||(recs[n]={});
   if(o.called){r.called=true;r.calledAt=r.calledAt||o.u||Date.now()}if(o.note)r.note=o.note;if(o.offer&&hasOffer(o))r.offer=o.offer;if(o.fav)r.fav=true;r.u=Date.now();dirty[n]=1;k++});
@@ -361,6 +381,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=8').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=9').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();

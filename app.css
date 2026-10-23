@@ -227,3 +227,7 @@ ul.tips{padding-left:18px;margin:6px 0}ul.tips li{margin:6px 0;font-size:14px}
 .frow.light{flex-wrap:wrap;overflow:visible}
 table.cmp thead .favbtn{background:transparent;border-color:rgba(255,255,255,.45);color:rgba(255,255,255,.85)}
 table.cmp thead .favbtn.on{background:#FFF6D9;border-color:#F2CF5B;color:var(--star)}
+
+.blform{margin-top:10px;display:flex;flex-direction:column;gap:8px}.blform input{font:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.minibtn.danger{background:#D93025;color:#fff;border-color:#D93025}.blbtn{color:#B42318}
+.menulink em{font-style:normal;align-self:flex-start}.menulink em[hidden]{display:none}.fcard.blk{border-left:4px solid #D93025}
