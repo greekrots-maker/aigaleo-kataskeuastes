@@ -240,3 +240,5 @@ table.cmp thead .favbtn.on{background:#FFF6D9;border-color:#F2CF5B;color:var(--s
 @media(max-width:374px){.tabbar{padding-left:1px;padding-right:1px}.tabbar a{font-size:9px;letter-spacing:-.25px}.tabbar svg{width:22px;height:22px}.tabbar .cnt{font-size:9px;min-width:15px;height:15px}}
 @media(max-width:340px){.tabbar a{font-size:8.5px;letter-spacing:-.3px}}
 .search{min-width:0}.srow .fbtn{flex:none}
+
+.blform textarea{font:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;resize:vertical;min-height:84px;width:100%;box-sizing:border-box}.bl-upd{margin-top:4px;color:var(--sub)}#blback[hidden]{display:none}

@@ -74,7 +74,7 @@ function passes(c){
 function nFilters(){var n=Object.keys(F.trust).filter(function(k){return F.trust[k]}).length;if(F.ant)n++;if(F.area)n++;if(F.new)n++;if(F.todo)n++;if(F.nobody)n++;if(F.sort!=='prio')n++;return n}
 function ordered(){var a=C.slice();if(F.sort==='dist')a.sort(function(x,y){return (x.near?x.near.km:1e9)-(y.near?y.near.km:1e9)||x.prio-y.prio});return a}
 // ---------- cards ----------
-var UI={offer:{},more:{},log:{},bl:{}};
+var UI={offer:{},more:{},log:{},bl:{},ble:{},bld:{}},BLM=false;
 function star(n,cls){var f=isFav(n);return '<button type="button" class="favbtn'+(f?' on':'')+(cls?' '+cls:'')+'" data-n="'+esc(n)+'" aria-pressed="'+f+'" aria-label="'+(f?'Αφαίρεση από τα αγαπημένα':'Προσθήκη στα αγαπημένα')+'">'+(f?'★':'☆')+'</button>'}
 function trustB(c){return '<span class="tb t-'+c.trust+'">'+c.trust+'</span>'}
 function photos(c){if(!c.photos||!c.photos.length)return '';
@@ -186,8 +186,12 @@ document.addEventListener('click',function(e){var b=e.target.closest('.favbtn');
  if(e.target.closest('[data-reset]')){resetF();return}
  var o=e.target.closest('.open[data-n],.fopen');if(o){openCompany(o.dataset.n);return}
  var m=e.target.closest('.fmap');if(m){show('map');focusCompany(byName(m.dataset.n));return}
- var br=e.target.closest('.blrest');if(br){var bn=br.dataset.n;change(bn,function(r){r.bl=0;r.blr=''});refresh();if(cur==='black')renderBlack();toast('↩ Επανήλθε: '+bn);return}
- var g=e.target.closest('[data-go]');if(g){e.preventDefault();show(g.dataset.go)}},true);
+ var be=e.target.closest('.bledit');if(be){var en=be.dataset.n;UI.ble[en]=true;delete UI.bld[en];renderBlack();var ta=[].filter.call(document.querySelectorAll('#blacklist .ble-t'),function(t){return t.dataset.n===en})[0];if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}return}
+ var bx=e.target.closest('.ble-x');if(bx){delete UI.ble[bx.dataset.n];delete UI.bld[bx.dataset.n];renderBlack();return}
+ var bo=e.target.closest('.ble-ok');if(bo){var on=bo.dataset.n,tt=[].filter.call(document.querySelectorAll('#blacklist .ble-t'),function(t){return t.dataset.n===on})[0],nv=tt?tt.value.trim():'';delete UI.ble[on];delete UI.bld[on];change(on,function(r){r.blr=nv;r.blu=Date.now()});refresh();if(cur==='black')renderBlack();toast(nv?'✏️ Ο λόγος ενημερώθηκε':'✏️ Ο λόγος διαγράφηκε');return}
+ var br=e.target.closest('.blrest');if(br){var bn=br.dataset.n;change(bn,function(r){r.bl=0;r.blr='';r.blu=0});delete UI.ble[bn];delete UI.bld[bn];refresh();if(cur==='black')renderBlack();toast('↩ Επανήλθε: '+bn);return}
+ var g=e.target.closest('[data-go]');if(g){e.preventDefault();BLM=(g.dataset.go==='black'&&cur==='menu');show(g.dataset.go)}},true);
+document.addEventListener('input',function(e){var t=e.target;if(t.classList&&t.classList.contains('ble-t'))UI.bld[t.dataset.n]=t.value});
 function toggleFav(n){var f=!isFav(n);change(n,function(r){r.fav=f});
  document.querySelectorAll('.favbtn').forEach(function(b){if(b.dataset.n===n){b.classList.toggle('on',f);b.textContent=f?'★':'☆';b.setAttribute('aria-pressed',f);b.setAttribute('aria-label',f?'Αφαίρεση από τα αγαπημένα':'Προσθήκη στα αγαπημένα')}});
  toast(f?'★ Προστέθηκε στα αγαπημένα':'Αφαιρέθηκε από τα αγαπημένα');
@@ -228,8 +232,12 @@ function renderBlack(){var ls=C.filter(function(c){return isBl(c.name)}).sort(fu
  var h='<div class="panel"><h2>⛔ Μαύρη λίστα <span class="small">('+ls.length+')</span></h2><p class="small">Του Λογαριασμού '+esc(ACC)+'. Αυτές οι εταιρείες δεν εμφανίζονται στη Λίστα, στον Χάρτη, στα Αγαπημένα και στα «Κάλεσα». Συγχρονίζονται με την ομάδα.</p></div>';
  ls.forEach(function(c){var r=rec(c.name);
   h+='<article class="fcard blk"><div class="row1"><div class="prio">'+c.prio+'</div><div class="hn"><h2>'+esc(c.name)+'</h2><div class="tags">'+trustB(c)+'<span class="tag flag">⛔ '+fdt(r.bl)+'</span></div></div></div>';
-  h+='<div class="fnote">'+(r.blr?'Λόγος: '+esc(r.blr):'Χωρίς λόγο')+'</div>';
-  h+='<div class="row"><button type="button" class="minibtn pri blrest" data-n="'+esc(c.name)+'">↩ Επαναφορά</button></div></article>'});
+  var en=esc(c.name);
+  if(UI.ble[c.name]){var dv=(c.name in UI.bld)?UI.bld[c.name]:(r.blr||'');
+   h+='<div class="blform"><textarea class="ble-t" data-n="'+en+'" rows="3" maxlength="300" placeholder="Λόγος (κενό = χωρίς λόγο)" aria-label="Λόγος για τη μαύρη λίστα">'+esc(dv)+'</textarea><div class="row"><button type="button" class="minibtn pri ble-ok" data-n="'+en+'">Αποθήκευση</button><button type="button" class="minibtn ble-x" data-n="'+en+'">Άκυρο</button></div></div>'}
+  else{h+='<div class="fnote">'+(r.blr?'Λόγος: '+esc(r.blr):'Χωρίς λόγο')+'</div>'+(r.blu?'<div class="small bl-upd">ενημερώθηκε '+fdt(r.blu)+'</div>':'');
+   h+='<div class="row"><button type="button" class="minibtn bledit" data-n="'+en+'">✏️ Επεξεργασία</button><button type="button" class="minibtn pri blrest" data-n="'+en+'">↩ Επαναφορά</button></div>'}
+  h+='</article>'});
  $('blacklist').innerHTML=h}
 // ---------- team view ----------
 function pl(n,a,b){return n+' '+(n===1?a:b)}
@@ -252,12 +260,12 @@ function renderTeam(){var A=allAcc(),accs=Object.keys(A).filter(function(a){retu
    if(hasOffer(r))h+='<br>💼 '+[o.pct?o.pct+'%':'',o.sqm?o.sqm+' τ.μ.':'',o.units||'',o.months?o.months+' μήνες':'',o.guar?'εγγυητική: '+o.guar:''].filter(Boolean).map(esc).join(' · ');
    h+='</div>'});
   h+='</div>'});
- var bh='';accs.forEach(function(a){var L=Object.keys(A[a]).filter(function(n){var r=A[a][n];return r&&r.bl&&byName(n)});if(L.length)bh+='<div class="tact'+(a===String(ACC)?' me':'')+'"><span class="who">Λογαριασμός '+esc(a)+'</span><br>'+L.map(function(n){var r=A[a][n];return '⛔ '+esc(n)+(r.blr?' – '+esc(r.blr):'')}).join('<br>')+'</div>'});
+ var bh='';accs.forEach(function(a){var L=Object.keys(A[a]).filter(function(n){var r=A[a][n];return r&&r.bl&&byName(n)});if(L.length)bh+='<div class="tact'+(a===String(ACC)?' me':'')+'"><span class="who">Λογαριασμός '+esc(a)+'</span><br>'+L.map(function(n){var r=A[a][n];return '⛔ '+esc(n)+(r.blr?' – '+esc(r.blr):'')+(r.blu?' <span class="small">(ενημ. '+fdt(r.blu)+')</span>':'')}).join('<br>')+'</div>'});
  if(bh)h+='<div class="tcomp"><h3>⛔ Μαύρες λίστες</h3>'+bh+'</div>';
  $('teamview').innerHTML=h}
 // ---------- views ----------
 var cur='list',VIEWS=['list','fav','called','team','map','compare','black','menu'];
-function show(v){if(VIEWS.indexOf(v)<0)v='list';cur=v;VIEWS.forEach(function(x){$('v-'+x).hidden=(x!==v)});document.body.setAttribute('data-view',v);
+function show(v){if(VIEWS.indexOf(v)<0)v='list';if(v==='black'){var bb=$('blback');if(bb)bb.hidden=!BLM}BLM=false;cur=v;VIEWS.forEach(function(x){$('v-'+x).hidden=(x!==v)});document.body.setAttribute('data-view',v);
  document.querySelectorAll('#tabs a').forEach(function(a){var on=a.dataset.v===v||(v==='compare'&&a.dataset.v==='menu');a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
  if(v==='list'&&listStale){listStale=false;render()}if(v==='map')initMap();if(v==='compare')renderCompare();if(v==='fav')renderFav();if(v==='called')renderCalled();if(v==='black')renderBlack();if(v==='team')renderTeam();if(v==='menu')renderMenu();
  if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);window.scrollTo(0,0)}
@@ -381,6 +389,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=10.1').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=11').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();
