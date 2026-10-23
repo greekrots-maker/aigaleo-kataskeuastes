@@ -389,6 +389,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=11.1').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=12').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();
