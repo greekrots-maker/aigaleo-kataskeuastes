@@ -142,6 +142,7 @@ function updStats(){var mine=0,offers=0;C.forEach(function(c){var r=rec(c.name);
  var bn=blCount();['bln','blnt'].forEach(function(id){var bb=$(id);if(bb){bb.textContent=bn;bb.hidden=!bn}})
  var tn=0;C.forEach(function(c){if(othersCalled(c.name).length)tn++});var tb=$('teamn');tb.textContent=tn;tb.hidden=!tn}
 function render(){
+ if(F.only&&isBl(F.only))F.only='';
  var out=[];ordered().forEach(function(c){if(passes(c))out.push(card(c))});
  var nb=blCount(),nc=calledOnlyCount(),av=C.length-nb-nc,ex=[];if(nc)ex.push('+'+nc+' κάλεσες');if(nb)ex.push('+'+nb+' μαύρη λίστα');
  $('count').textContent='Εμφανίζονται '+out.length+(out.length!==av&&!F.only?' από '+av:'')+(ex.length?' ('+ex.join(', ')+')':'')+(F.sort==='dist'?' · σειρά: πιο κοντά στο οικόπεδο':'');
@@ -296,7 +297,7 @@ function initMap(){if(map){setTimeout(function(){map.invalidateSize()},60);retur
   layer=L.layerGroup().addTo(map);offLayer=L.layerGroup();
   ['m-off','m-ap','m-ring','m-fav'].forEach(function(id){$(id).addEventListener('change',drawMarkers)});
   mapReady=true;drawMarkers();if(pendingFocus){var f=pendingFocus;pendingFocus=null;focusCompany(f)}setTimeout(function(){map.invalidateSize()},80)})}
-function drawMarkers(){if(!map)return;layer.clearLayers();offLayer.clearLayers();var n=0,na=0;
+function drawMarkers(){if(!map)return;if(F.only&&isBl(F.only))F.only='';layer.clearLayers();offLayer.clearLayers();var n=0,na=0;
  var showAp=$('m-ap').checked,onlyFav=$('m-fav').checked;
  var ncl=0;C.forEach(function(c){if(!passes(c,true))return;if(onlyFav&&!isFav(c.name))return;var col=TC[c.trust],dim=inCalledOnly(c.name);if(dim)ncl++;
   c.pins.forEach(function(p){if(p.lat==null)return;var ap=p.lvl!=='exact';if(ap&&!showAp)return;
@@ -395,6 +396,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=13').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=13.1').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();
