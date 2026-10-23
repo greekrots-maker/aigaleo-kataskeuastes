@@ -35,8 +35,13 @@ function calledOnlyCount(){var k=0;C.forEach(function(c){if(inCalledOnly(c.name)
 function isFav(n){return !!rec(n).fav&&!rec(n).bl}
 function favCount(){var k=0;C.forEach(function(c){if(isFav(c.name))k++});return k}
 var OF=[
+ {k:'type',l:'Τύπος',t:'sel',o:['','αντιπαροχή','εργολαβία']},
+ {k:'sd',l:'Σ.Δ. που λογαριάζει (κενό = 1,6)',t:'num',ph:'1,6'},
+ {k:'cov',l:'Κάλυψη (%)',t:'num',ph:'60'},
+ {k:'floors',l:'Όροφοι',t:'num',ph:'π.χ. 5'},
  {k:'pct',l:'Ποσοστό αντιπαροχής για μένα (%)',t:'num',best:'max',ph:'π.χ. 35'},
- {k:'units',l:'Διαμερίσματα για μένα',t:'text',ph:'π.χ. 2 διαμ. (1ος & 3ος)'},
+ {k:'unitsN',l:'Διαμερίσματα για μένα (πλήθος)',t:'num',ph:'π.χ. 2'},
+ {k:'units',l:'Διαμερίσματα για μένα – περιγραφή',t:'text',ph:'π.χ. 2 διαμ. (1ος & 3ος)'},
  {k:'sqm',l:'Τ.μ. για μένα (σύνολο)',t:'num',best:'max',ph:'π.χ. 160'},
  {k:'months',l:'Χρόνος παράδοσης (μήνες)',t:'num',best:'min',ph:'π.χ. 30'},
  {k:'guar',l:'Εγγυητική επιστολή',t:'sel',o:['','ναι','όχι'],best:'yes'},
@@ -45,6 +50,8 @@ var OF=[
  {k:'parking',l:'Πάρκινγκ / αποθήκες για μένα',t:'text',ph:'π.χ. 2 θέσεις + 1 αποθήκη'},
  {k:'parkN',l:'Πλήθος θέσεων + αποθηκών',t:'num',best:'max',ph:'π.χ. 3'},
  {k:'rent',l:'Ενοίκιο ενδιάμεσης κατοικίας (€/μήνα)',t:'num',best:'max',ph:'π.χ. 600'},
+ {k:'cash',l:'Μετρητά προς εμένα (€)',t:'num',ph:'π.χ. 20000'},
+ {k:'price',l:'Εργολαβία: τίμημα (€)',t:'num',ph:'π.χ. 600000'},
  {k:'quality',l:'Ποιότητα υλικών (1–5)',t:'sel',o:['','1','2','3','4','5'],best:'max'},
  {k:'qualityTxt',l:'Υλικά – λεπτομέρειες',t:'text',ph:'κουφώματα, αντλία θερμότητας, κλάση…'},
  {k:'notes',l:'Σημειώσεις προσφοράς',t:'area',ph:'όροι, ρήτρες, εντυπώσεις…'}];
@@ -93,7 +100,7 @@ function offerForm(c,r){var o=(r&&r.offer)||{},h='<div class="of">';
   else if(f.t==='area')h+='<textarea data-of="'+f.k+'" placeholder="'+esc(f.ph||'')+'">'+esc(v)+'</textarea>';
   else h+='<input data-of="'+f.k+'" '+(f.t==='num'?'type="number" inputmode="decimal" step="any"':'type="text"')+' value="'+esc(v)+'" placeholder="'+esc(f.ph||'')+'">';
   h+='</label>'});
- return h+'</div>'}
+ return h+'<div class="ofcalc small">'+esc(ofCalcTxt(o))+'</div></div>'}
 function offerSum(r){return '💼 Προσφορά'+(hasOffer(r)?' ✓ καταχωρισμένη':' – καταχώριση')}
 function logForm(c){return '<div class="logf" data-logf="1"><label>Ημ/νία & ώρα<input type="datetime-local" class="l-at" value="'+localInput(Date.now())+'"></label><label>Αποτέλεσμα<select class="l-out">'+OUT.map(function(o){return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'}).join('')+'</select></label><label class="w">Σημειώσεις κλήσης<textarea class="l-notes" rows="2" placeholder="τι ειπώθηκε, επόμενο βήμα…"></textarea></label><div class="btns"><button type="button" class="minibtn l-cancel">Άκυρο</button><button type="button" class="minibtn pri l-save">Αποθήκευση</button></div></div>'}
 function callList(r){var cs=((r&&r.calls)||[]).slice().sort(function(a,b){return b.at-a.at});if(!cs.length)return '';
@@ -140,7 +147,7 @@ function updStats(){var mine=0,offers=0;C.forEach(function(c){var r=rec(c.name);
  var fb=$('favn'),fc=favCount();fb.textContent=fc;fb.hidden=!fc;
  var cb=$('calln');if(cb){var cn=calledList().length;cb.textContent=cn;cb.hidden=!cn}
  var bn=blCount();['bln','blnt'].forEach(function(id){var bb=$(id);if(bb){bb.textContent=bn;bb.hidden=!bn}})
- var tn=0;C.forEach(function(c){if(othersCalled(c.name).length)tn++});var tb=$('teamn');tb.textContent=tn;tb.hidden=!tn}
+ var tn=0;C.forEach(function(c){if(othersCalled(c.name).length)tn++});var tb=$('teamn');tb.textContent=tn;tb.hidden=!tn;var cb=$('cmpn');if(cb){var cn=cmpCount();cb.textContent=cn;cb.hidden=!cn}}
 function render(){
  if(F.only&&isBl(F.only))F.only='';
  var out=[];ordered().forEach(function(c){if(passes(c))out.push(card(c))});
@@ -180,8 +187,8 @@ cards.addEventListener('click',function(e){var x=cardOf(e.target);if(!x)return;v
  if(e.target.closest('.btn.call')){UI.log[n]=true;setTimeout(function(){updCard(n)},400)}});
 cards.addEventListener('input',function(e){var x=cardOf(e.target);if(!x)return;var n=x.n,t=e.target;
  if(t.classList.contains('note')){change(n,function(r){r.note=t.value})}
- else if(t.dataset.of){change(n,function(r){r.offer=r.offer||{};r.offer[t.dataset.of]=t.value});var sm=x.a.querySelector('details.offer>summary');if(sm)sm.textContent=offerSum(rec(n))}});
-cards.addEventListener('change',function(e){var x=cardOf(e.target);if(!x)return;var t=e.target;if(t.dataset.of&&t.tagName==='SELECT'){var n=x.n;change(n,function(r){r.offer=r.offer||{};r.offer[t.dataset.of]=t.value});var sm=x.a.querySelector('details.offer>summary');if(sm)sm.textContent=offerSum(rec(n))}});
+ else if(t.dataset.of){change(n,function(r){r.offer=r.offer||{};r.offer[t.dataset.of]=t.value});var sm=x.a.querySelector('details.offer>summary');if(sm)sm.textContent=offerSum(rec(n));var oc=x.a.querySelector('.ofcalc');if(oc)oc.textContent=ofCalcTxt(rec(n).offer);}});
+cards.addEventListener('change',function(e){var x=cardOf(e.target);if(!x)return;var t=e.target;if(t.dataset.of&&t.tagName==='SELECT'){var n=x.n;change(n,function(r){r.offer=r.offer||{};r.offer[t.dataset.of]=t.value});var sm=x.a.querySelector('details.offer>summary');if(sm)sm.textContent=offerSum(rec(n));var oc=x.a.querySelector('.ofcalc');if(oc)oc.textContent=ofCalcTxt(rec(n).offer);}});
 cards.addEventListener('toggle',function(e){var d=e.target;if(!d.tagName||d.tagName!=='DETAILS')return;var x=cardOf(d);if(!x)return;
  if(d.classList.contains('offer')){UI.offer[x.n]=d.open;if(d.open&&!d.querySelector('.of'))d.insertAdjacentHTML('beforeend',offerForm(x.c,rec(x.n)))}
  else if(d.classList.contains('more')){UI.more[x.n]=d.open;var b=d.querySelector('.body');if(d.open&&!b.innerHTML)b.innerHTML=fullBody(x.c)}},true);
@@ -194,10 +201,17 @@ document.addEventListener('click',function(e){var b=e.target.closest('.favbtn');
  var be=e.target.closest('.bledit');if(be){var en=be.dataset.n;UI.ble[en]=true;delete UI.bld[en];renderBlack();var ta=[].filter.call(document.querySelectorAll('#blacklist .ble-t'),function(t){return t.dataset.n===en})[0];if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}return}
  var bx=e.target.closest('.ble-x');if(bx){delete UI.ble[bx.dataset.n];delete UI.bld[bx.dataset.n];renderBlack();return}
  var bo=e.target.closest('.ble-ok');if(bo){var on=bo.dataset.n,tt=[].filter.call(document.querySelectorAll('#blacklist .ble-t'),function(t){return t.dataset.n===on})[0],nv=tt?tt.value.trim():'';delete UI.ble[on];delete UI.bld[on];change(on,function(r){r.blr=nv;r.blu=Date.now()});refresh();if(cur==='black')renderBlack();toast(nv?'✏️ Ο λόγος ενημερώθηκε':'✏️ Ο λόγος διαγράφηκε');return}
+ var cx=e.target.closest('.cmpx');if(cx){var xn=cx.dataset.n;setCmp(xn,false);renderCompare();toast('Αφαιρέθηκε από τη σύγκριση');return}
+ var ce=e.target.closest('.cmped');if(ce){var en2=ce.dataset.n;UI.offer[en2]=true;openCompany(en2);setTimeout(function(){var c=byName(en2),el=c&&$('c'+c.prio),d=el&&el.querySelector('details.offer');if(d){d.open=true;d.scrollIntoView({block:'start'})}},60);return}
  var cb=e.target.closest('.cl-back');if(cb){var cn=cb.dataset.n,hl=!!(rec(cn).calls||[]).length;change(cn,function(r){r.called=false;r.calledAt=null;r.inl=hl?Date.now():0});refresh();if(cur==='called')renderCalled();toast('↩ Επέστρεψε στη λίστα: '+cn);return}
  var ch=e.target.closest('.cl-hide');if(ch){var hn=ch.dataset.n;change(hn,function(r){r.inl=0});refresh();if(cur==='called')renderCalled();toast('↪ Μόνο στα «Κάλεσα»: '+hn);return}
  var br=e.target.closest('.blrest');if(br){var bn=br.dataset.n;change(bn,function(r){r.bl=0;r.blr='';r.blu=0});delete UI.ble[bn];delete UI.bld[bn];refresh();if(cur==='black')renderBlack();toast('↩ Επανήλθε: '+bn);return}
  var g=e.target.closest('[data-go]');if(g){e.preventDefault();BLM=(g.dataset.go==='black'&&cur==='menu');show(g.dataset.go)}},true);
+document.addEventListener('change',function(e){var t=e.target;if(!t||!t.closest||!t.closest('#cmp'))return;
+ if(t.classList.contains('cmpck')){UI.cmpPick=true;setCmp(t.dataset.n,t.checked);renderCompare()}
+ else if(t.id==='cmpsort'){lsSet('kat5_cmps',t.value);renderCompare()}
+ else if(t.id==='cmpoth'){lsSet('kat5_cmpo',t.checked);renderCompare()}});
+document.addEventListener('toggle',function(e){if(e.target&&e.target.classList&&e.target.classList.contains('cmppick'))UI.cmpPick=e.target.open},true);
 document.addEventListener('input',function(e){var t=e.target;if(t.classList&&t.classList.contains('ble-t'))UI.bld[t.dataset.n]=t.value});
 function toggleFav(n){var f=!isFav(n);change(n,function(r){r.fav=f});
  document.querySelectorAll('.favbtn').forEach(function(b){if(b.dataset.n===n){b.classList.toggle('on',f);b.textContent=f?'★':'☆';b.setAttribute('aria-pressed',f);b.setAttribute('aria-label',f?'Αφαίρεση από τα αγαπημένα':'Προσθήκη στα αγαπημένα')}});
@@ -273,7 +287,7 @@ function renderTeam(){var A=allAcc(),accs=Object.keys(A).filter(function(a){retu
 // ---------- views ----------
 var cur='list',VIEWS=['list','fav','called','team','map','compare','black','menu'];
 function show(v){if(VIEWS.indexOf(v)<0)v='list';if(v!=='list'&&Object.keys(UI.keep).length){UI.keep={};listStale=true}if(v==='black'){var bb=$('blback');if(bb)bb.hidden=!BLM}BLM=false;cur=v;VIEWS.forEach(function(x){$('v-'+x).hidden=(x!==v)});document.body.setAttribute('data-view',v);
- document.querySelectorAll('#tabs a').forEach(function(a){var on=a.dataset.v===v||(v==='compare'&&a.dataset.v==='menu');a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+ document.querySelectorAll('#tabs a').forEach(function(a){var on=a.dataset.v===v||(v==='team'&&a.dataset.v==='menu');a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
  if(v==='list'&&listStale){listStale=false;render()}if(v==='map')initMap();if(v==='compare')renderCompare();if(v==='fav')renderFav();if(v==='called')renderCalled();if(v==='black')renderBlack();if(v==='team')renderTeam();if(v==='menu')renderMenu();
  if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);window.scrollTo(0,0)}
 $('tabs').addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;e.preventDefault();if(a.dataset.v===cur&&cur==='list'){window.scrollTo({top:0,behavior:'smooth'});return}show(a.dataset.v)});
@@ -310,17 +324,71 @@ var pendingFocus=null;
 function focusCompany(c){if(!c)return;F.only=c.name;render();if(!map){pendingFocus=c;return}var pts=[];c.pins.forEach(function(p){if(p.lat!=null)pts.push([p.lat,p.lon])});c.offices.forEach(function(o){if(o.lat!=null)pts.push([o.lat,o.lon])});pts.push([PLOT.lat,PLOT.lon]);map.fitBounds(pts,{padding:[30,30],maxZoom:15})}
 // ---------- compare ----------
 function num(v){var x=parseFloat(String(v).replace(',','.'));return isNaN(x)?null:x}
-function renderCompare(){var A=allAcc(),cols=[];
- C.forEach(function(c){Object.keys(A).sort(function(a,b){return a-b}).forEach(function(a){var r=A[a][c.name];if(hasOffer(r))cols.push({c:c,a:a,o:r.offer})})});
- if(!cols.length){$('cmp').innerHTML='<div class="empty" style="box-shadow:none"><span class="ei">💼</span><b>Καμία προσφορά ακόμη</b>Άνοιξε «💼 Προσφορά» σε μια κάρτα και συμπλήρωσε τα πεδία.</div>';return}
- var h='<div class="cmpwrap"><table class="cmp"><thead><tr><th>Πεδίο</th>'+cols.map(function(x){return '<th>'+star(x.c.name,'sm')+' '+x.c.prio+'. '+esc(x.c.name)+'<br><span style="font-weight:400;opacity:.8">Λογαριασμός '+esc(x.a)+'</span></th>'}).join('')+'</tr></thead><tbody>';
- OF.forEach(function(f){var vals=cols.map(function(x){var v=x.o[f.k];return v==null?'':String(v)});var best=null;
-  if(f.best==='max'||f.best==='min'){var ns=vals.map(num).filter(function(x){return x!=null});if(ns.length>=2)best=f.best==='max'?Math.max.apply(null,ns):Math.min.apply(null,ns)}
-  var filled=vals.filter(function(x){return x}).length;
-  var isBest=function(v){if(best!=null)return num(v)===best;if(f.best==='yes')return v==='ναι'&&filled>=2&&vals.some(function(x){return x&&x!=='ναι'});if(f.best==='builder')return v==='ο κατασκευαστής'&&filled>=2&&vals.some(function(x){return x&&x!=='ο κατασκευαστής'});return false};
-  h+='<tr><td>'+esc(f.l)+'</td>'+vals.map(function(v){return '<td'+(v&&isBest(v)?' class="best"':'')+'>'+(v?esc(v)+(f.k==='pct'?'%':''):'<span class="small">—</span>')+'</td>'}).join('')+'</tr>'});
- h+='<tr><td>Εμπιστοσύνη</td>'+cols.map(function(x){return '<td>'+trustB(x.c)+'</td>'}).join('')+'</tr>';
- h+='<tr><td>Πλησιέστερο έργο</td>'+cols.map(function(x){return '<td>'+(x.c.near?(x.c.near.lvl==='exact'?'':'≈ ')+km(x.c.near.km):'—')+'</td>'}).join('')+'</tr></tbody></table></div><p class="small">Υψηλότερο = καλύτερο, εκτός από τον χρόνο παράδοσης.</p>';
+var PL={area:244,sd:1.6,cov:60,h:19};
+function nf(x,d){if(x==null||isNaN(x))return '';return Number(x).toLocaleString('el-GR',{maximumFractionDigits:d==null?1:d})}
+function ofCalc(o){o=o||{};var sd=num(o.sd);if(sd==null||sd<=0)sd=PL.sd;var tot=sd*PL.area,pct=num(o.pct),own=pct!=null?tot*pct/100:null,cov=num(o.cov),pr=num(o.price);
+ return {sd:sd,sdDef:num(o.sd)==null,tot:tot,own:own,bld:own!=null?tot-own:null,cov:cov,covM:(cov!=null?cov:PL.cov)*PL.area/100,eur:pr!=null&&tot?pr/tot:null}}
+function ofCalcTxt(o){var k=ofCalc(o);return 'Δόμηση '+nf(k.tot)+' τ.μ. (Σ.Δ. '+nf(k.sd,2)+(k.sdDef?' προεπ.':'')+')'+(k.own!=null?' → για μένα ≈ '+nf(k.own)+' τ.μ. · κατασκευαστής ≈ '+nf(k.bld)+' τ.μ.':'')+(k.eur!=null?' · ≈ '+nf(k.eur,0)+' €/τ.μ.':'')}
+function inCmp(n){var r=rec(n);if(r.bl)return false;if(r.cmp===-1)return false;return r.cmp===1||hasOffer(r)}
+function cmpCount(){var k=0;C.forEach(function(c){if(inCmp(c.name))k++});return k}
+function setCmp(n,on){var r=rec(n);change(n,function(r){r.cmp=on?(hasOffer(r)?0:1):-1})}
+function renderCompare(){var A=allAcc(),me=String(ACC),others=!!lsGet('kat5_cmpo',false),srt=lsGet('kat5_cmps','own'),cols=[];
+ C.forEach(function(c){if(inCmp(c.name))cols.push({c:c,a:me,o:rec(c.name).offer||{},mine:true})});
+ if(others)Object.keys(A).sort(function(a,b){return a-b}).forEach(function(a){if(a===me)return;C.forEach(function(c){var r=A[a][c.name];if(hasOffer(r)&&!r.bl)cols.push({c:c,a:a,o:r.offer,mine:false})})});
+ cols.forEach(function(x){x.k=ofCalc(x.o)});
+ var tr={'Υψηλή':0,'Μέτρια':1,'Άγνωστη':2,'Χαμηλή':3};
+ cols.sort(function(a,b){if(srt==='prio')return a.c.prio-b.c.prio;if(srt==='trust')return (tr[a.c.trust]-tr[b.c.trust])||a.c.prio-b.c.prio;var x=a.k.own,y=b.k.own;if(x==null&&y==null)return a.c.prio-b.c.prio;if(x==null)return 1;if(y==null)return -1;return y-x});
+ var h='<div class="panel plotsum"><h2>💼 Σύγκριση προσφορών</h2><div class="plotg"><div><b>244</b><span>τ.μ. οικόπεδο</span></div><div><b>1,6</b><span>Σ.Δ. → ≈ '+nf(PL.area*PL.sd)+' τ.μ. δόμηση</span></div><div><b>60%</b><span>κάλυψη → ≈ '+nf(PL.area*PL.cov/100)+' τ.μ.</span></div><div><b>19 μ.</b><span>μέγ. ύψος</span></div></div>'+
+  '<p class="small">Τ.μ. για μένα = Σ.Δ. της προσφοράς × 244 × ποσοστό. Αν η προσφορά δεν γράφει Σ.Δ., λογαριάζεται 1,6. Πράσινο = καλύτερη τιμή της γραμμής (όταν υπάρχουν ≥2 τιμές).</p></div>';
+ var pick=C.filter(function(c){return !isBl(c.name)}).slice().sort(function(a,b){return (hasOffer(rec(b.name))-hasOffer(rec(a.name)))||a.prio-b.prio});
+ h+='<div class="panel cmpctl"><div class="row" style="margin:0;align-items:center"><label class="small">Σειρά <select id="cmpsort"><option value="own"'+(srt==='own'?' selected':'')+'>Τ.μ. για μένα ↓</option><option value="trust"'+(srt==='trust'?' selected':'')+'>Εμπιστοσύνη</option><option value="prio"'+(srt==='prio'?' selected':'')+'>Αρ. λίστας</option></select></label><label class="small"><input type="checkbox" id="cmpoth"'+(others?' checked':'')+'> και άλλων λογαριασμών</label></div>'+
+  '<details class="cmppick"'+(UI.cmpPick?' open':'')+'><summary>Επιλογή εταιρειών ('+cmpCount()+')</summary><div class="pickl">'+pick.map(function(c){var on=inCmp(c.name),ho=hasOffer(rec(c.name));return '<label><input type="checkbox" class="cmpck" data-n="'+esc(c.name)+'"'+(on?' checked':'')+'> '+c.prio+'. '+esc(c.name)+(ho?' <span class="tag aig">💼</span>':'')+'</label>'}).join('')+'</div></details></div>';
+ if(!cols.length){$('cmp').innerHTML=h+'<div class="empty"><span class="ei">💼</span><b>Δεν έχεις προσφορές για σύγκριση</b>Άνοιξε «💼 Προσφορά» σε μια κάρτα και συμπλήρωσε τα πεδία, ή διάλεξε εταιρείες από την «Επιλογή εταιρειών».</div>';return}
+ function raw(k){return function(x){var v=x.o[k];return v==null?'':String(v).trim()}}
+ var R=[['Βασικά'],
+  {l:'Τύπος',v:raw('type')},
+  {l:'Εμπιστοσύνη',html:function(x){return trustB(x.c)},always:1},
+  {l:'Πλησιέστερο έργο',html:function(x){return x.c.near?(x.c.near.lvl==='exact'?'':'≈ ')+km(x.c.near.km):''},always:1},
+  ['Δόμηση'],
+  {l:'Σ.Δ. που λογαριάζει',n:function(x){return x.k.sd},d:2,best:'max',suf:function(x){return x.k.sdDef?' <span class="small">(προεπ.)</span>':''},always:1},
+  {l:'Συνολική δόμηση (τ.μ.)',n:function(x){return x.k.tot},best:'max',always:1},
+  {l:'Κάλυψη (%)',n:function(x){return x.k.cov}},
+  {l:'Όροφοι',n:function(x){return num(x.o.floors)},d:0},
+  ['Αντιπαροχή'],
+  {l:'Ποσοστό για μένα (%)',n:function(x){return num(x.o.pct)},best:'max'},
+  {l:'Τ.μ. για μένα (υπολογ.)',n:function(x){return x.k.own},best:'max',strong:1},
+  {l:'Τ.μ. κατασκευαστή (υπολογ.)',n:function(x){return x.k.bld}},
+  {l:'Τ.μ. για μένα (όπως τα δήλωσε)',n:function(x){return num(x.o.sqm)},best:'max'},
+  {l:'Διαμερίσματα για μένα (πλήθος)',n:function(x){return num(x.o.unitsN)},d:0,best:'max'},
+  {l:'Διαμερίσματα – περιγραφή',v:raw('units')},
+  {l:'Πάρκινγκ / αποθήκες',v:raw('parking')},
+  {l:'Πλήθος θέσεων + αποθηκών',n:function(x){return num(x.o.parkN)},d:0,best:'max'},
+  {l:'Μετρητά προς εμένα (€)',n:function(x){return num(x.o.cash)},d:0,best:'max'},
+  {l:'Ενοίκιο κατά την κατασκευή (€/μήνα)',n:function(x){return num(x.o.rent)},d:0,best:'max'},
+  ['Εργολαβία'],
+  {l:'Τίμημα (€)',n:function(x){return num(x.o.price)},d:0,best:'min'},
+  {l:'€/τ.μ. (τίμημα ÷ δόμηση)',n:function(x){return x.k.eur},d:0,best:'min'},
+  ['Όροι'],
+  {l:'Παράδοση (μήνες)',n:function(x){return num(x.o.months)},d:0,best:'min'},
+  {l:'Εγγυητική επιστολή',v:raw('guar'),yes:'ναι'},
+  {l:'Ποσό εγγυητικής (€)',n:function(x){return num(x.o.guarAmt)},d:0,best:'max'},
+  {l:'Άδειες/μελέτες πληρώνει',v:raw('permits'),yes:'ο κατασκευαστής'},
+  {l:'Ποιότητα υλικών (1–5)',n:function(x){return num(x.o.quality)},d:0,best:'max'},
+  {l:'Υλικά',v:raw('qualityTxt')},
+  {l:'Σημειώσεις',v:raw('notes'),wide:1}];
+ var body='',sec=null;
+ R.forEach(function(f){if(Array.isArray(f)){sec=f[0];return}
+  var cells,filled;
+  if(f.n){var ns=cols.map(f.n);filled=ns.filter(function(v){return v!=null}).length;var best=null;if(f.best&&filled>=2){var vv=ns.filter(function(v){return v!=null});var b=f.best==='max'?Math.max.apply(null,vv):Math.min.apply(null,vv);if(vv.some(function(v){return v!==b}))best=b}
+   cells=ns.map(function(v,i){return '<td'+(v!=null&&best!=null&&Math.abs(v-best)<1e-9?' class="best"':'')+(f.strong?' style="font-weight:700"':'')+'>'+(v==null?'<span class="small">—</span>':nf(v,f.d)+(f.suf?f.suf(cols[i]):''))+'</td>'})}
+  else if(f.html){filled=cols.length;cells=cols.map(function(x){var t=f.html(x);return '<td>'+(t||'<span class="small">—</span>')+'</td>'})}
+  else{var vs=cols.map(f.v);filled=vs.filter(Boolean).length;var some=f.yes&&filled>=2&&vs.some(function(v){return v&&v!==f.yes});
+   cells=vs.map(function(v){return '<td'+(some&&v===f.yes?' class="best"':'')+(f.wide?' class="wide"':'')+'>'+(v?esc(v):'<span class="small">—</span>')+'</td>'})}
+  if(!filled&&!f.always)return;
+  if(sec){body+='<tr class="sec"><td>'+esc(sec)+'</td><td colspan="'+cols.length+'"></td></tr>';sec=null}
+  body+='<tr><td>'+esc(f.l)+'</td>'+cells.join('')+'</tr>'});
+ h+='<div class="cmpwrap"><table class="cmp"><thead><tr><th>'+cols.length+' εταιρείες</th>'+cols.map(function(x){return '<th><div class="cmph"><span>'+x.c.prio+'. '+esc(x.c.name)+'</span>'+(x.mine?'<button type="button" class="cmpx" data-n="'+esc(x.c.name)+'" aria-label="Αφαίρεση από τη σύγκριση">✕</button>':'')+'</div><div class="cmpa">'+(x.mine?'<button type="button" class="cmped" data-n="'+esc(x.c.name)+'">✏️ Προσφορά</button>':'Λογ. '+esc(x.a))+'</div></th>'}).join('')+'</tr></thead><tbody>'+body+'</tbody></table></div>';
+ h+='<p class="small" style="margin:8px 2px">Σύρε τον πίνακα δεξιά-αριστερά. Τα πεδία συμπληρώνονται από «✏️ Προσφορά» στην κάρτα κάθε εταιρείας.</p>';
  $('cmp').innerHTML=h}
 // ---------- sync ----------
 var Sync=(function(){
@@ -396,6 +464,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=13.1').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=14').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();
