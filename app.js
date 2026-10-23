@@ -130,6 +130,7 @@ function updStats(){var mine=0,offers=0;C.forEach(function(c){var r=rec(c.name);
  var A=allAcc(),tc={};Object.keys(A).forEach(function(a){Object.keys(A[a]).forEach(function(n){var x=A[a][n];if(x&&(x.called||(x.calls&&x.calls.length)))tc[n]=1})});
  var ms=$('mystats');if(ms)ms.textContent='Εσύ (Λογ. '+ACC+'): '+pl(mine,'κλήση','κλήσεις')+' · '+pl(offers,'προσφορά','προσφορές')+' · Ομάδα: '+Object.keys(tc).length+'/'+C.length+' εταιρείες σε επαφή';
  var fb=$('favn'),fc=favCount();fb.textContent=fc;fb.hidden=!fc;
+ var cb=$('calln');if(cb){var cn=calledList().length;cb.textContent=cn;cb.hidden=!cn}
  var tn=0;C.forEach(function(c){if(othersCalled(c.name).length)tn++});var tb=$('teamn');tb.textContent=tn;tb.hidden=!tn}
 function render(){
  var out=[];ordered().forEach(function(c){if(passes(c))out.push(card(c))});
@@ -181,7 +182,7 @@ document.addEventListener('click',function(e){var b=e.target.closest('.favbtn');
 function toggleFav(n){var f=!isFav(n);change(n,function(r){r.fav=f});
  document.querySelectorAll('.favbtn').forEach(function(b){if(b.dataset.n===n){b.classList.toggle('on',f);b.textContent=f?'★':'☆';b.setAttribute('aria-pressed',f);b.setAttribute('aria-label',f?'Αφαίρεση από τα αγαπημένα':'Προσθήκη στα αγαπημένα')}});
  toast(f?'★ Προστέθηκε στα αγαπημένα':'Αφαιρέθηκε από τα αγαπημένα');
- if(cur==='fav')renderFav();if(mapReady&&$('m-fav').checked)drawMarkers()}
+ if(cur==='fav')renderFav();if(cur==='called')renderCalled();if(mapReady&&$('m-fav').checked)drawMarkers()}
 function openCompany(n){var c=byName(n);if(!c)return;F.only=n;show('list');render();var el=$('c'+c.prio);if(el)el.scrollIntoView({block:'start'})}
 // ---------- favourites view ----------
 function renderFav(){var fs=C.filter(function(c){return isFav(c.name)});
@@ -199,14 +200,27 @@ function renderFav(){var fs=C.filter(function(c){return isFav(c.name)});
   if(c.web)h+='<a class="btn sec" href="'+esc(c.web)+'" target="_blank" rel="noopener">🌐</a>';
   h+='</div><div class="row"><button type="button" class="minibtn fopen" data-n="'+esc(c.name)+'">Άνοιγμα κάρτας</button>'+((c.pins.some(function(p){return p.lat!=null})||c.offices.some(function(o){return o.lat!=null}))?'<button type="button" class="minibtn fmap" data-n="'+esc(c.name)+'">🗺 Χάρτης</button>':'')+'</div></article>'});
  $('favlist').innerHTML=h}
+// ---------- called view ----------
+function callTime(r){var lc=lastCall(r);return Math.max(lc?lc.at:0,r.calledAt||0)}
+function calledList(){return C.filter(function(c){var r=rec(c.name);return r&&(r.called||(r.calls&&r.calls.length))}).sort(function(a,b){return callTime(rec(b.name))-callTime(rec(a.name))})}
+function renderCalled(){var ls=calledList();
+ if(!ls.length){$('calledlist').innerHTML='<div class="empty"><span class="ei">📞</span><b>Δεν έχεις καλέσει καμία εταιρεία ακόμη</b>Όταν πατήσεις «Κάλεσα» ή «＋ Καταγραφή κλήσης» σε μια κάρτα, η εταιρεία θα εμφανιστεί εδώ, με την πιο πρόσφατη κλήση πρώτη.<div class="row" style="justify-content:center"><button class="minibtn pri" type="button" data-go="list">Στη λίστα</button></div></div>';return}
+ var h='<div class="panel"><h2>📞 Κάλεσα <span class="small">('+ls.length+')</span></h2><p class="small">Του Λογαριασμού '+esc(ACC)+', πιο πρόσφατη κλήση πρώτη. Συγχρονίζονται με την ομάδα.</p></div>';
+ ls.forEach(function(c){var r=rec(c.name),lc=lastCall(r),n=(r.calls||[]).length,t=callTime(r);
+  h+='<article class="fcard"><div class="row1"><div class="prio">'+c.prio+'</div><div class="hn"><h2>'+esc(c.name)+'</h2><div class="tags">'+trustB(c)+'<span class="tag done">✓ '+(t?fdt(t):'Κάλεσα')+'</span>'+(hasOffer(r)?'<span class="tag aig">💼 Προσφορά</span>':'')+'</div></div>'+star(c.name)+'</div>';
+  h+='<div class="fnote">'+(lc?'📞 <span class="oc oc-'+outL(lc.outcome)[2]+'">'+esc(outL(lc.outcome)[1])+'</span> · '+fdt(lc.at)+(lc.notes?'\n'+esc(lc.notes):''):'📞 Σημειώθηκε «Κάλεσα»'+(r.calledAt?' · '+fdt(r.calledAt):'')+' – χωρίς καταγραφή αποτελέσματος')+'</div>';
+  h+='<div class="small" style="margin:6px 0">Κλήσεις: <span class="ccount">'+n+'</span>'+(hasOffer(r)?' · 💼 υπάρχει προσφορά':' · χωρίς προσφορά')+'</div>';
+  if(r.note)h+='<div class="fnote">📝 '+esc(r.note)+'</div>';
+  h+='<div class="actions">'+phoneBtns(c,false)+'</div><div class="row"><button type="button" class="minibtn fopen" data-n="'+esc(c.name)+'">Άνοιγμα κάρτας</button></div></article>'});
+ $('calledlist').innerHTML=h}
 // ---------- team view ----------
 function pl(n,a,b){return n+' '+(n===1?a:b)}
 function renderTeam(){var A=allAcc(),accs=Object.keys(A).filter(function(a){return a===String(ACC)||Object.keys(A[a]).some(function(n){return active(A[a][n])})}).sort(function(a,b){return a-b});
  var h='<div class="panel"><h2>👥 Ομάδα</h2>';
  if(!Sync.url())h+='<p class="small">⚠ Ο κοινός συγχρονισμός δεν έχει ενεργοποιηθεί ακόμη: βλέπεις μόνο τα δικά σου (Λογ. '+esc(ACC)+'). Μόλις ενεργοποιηθεί, εδώ θα φαίνονται οι κλήσεις και οι προσφορές όλων.</p>';
  else h+='<p class="small">Τελευταία ενημέρωση: '+(team.at?fdt(team.at):'—')+'. Ανανεώνεται αυτόματα κάθε λεπτό.</p>';
- h+='<div class="tsum">';accs.forEach(function(a){var calls=0,offers=0,cos=0;Object.keys(A[a]).forEach(function(n){var r=A[a][n];if(!r)return;if(r.called||(r.calls&&r.calls.length))cos++;calls+=(r.calls||[]).length;if(hasOffer(r))offers++});
-  h+='<div class="'+(a===String(ACC)?'me':'')+'"><b>Λογαριασμός '+esc(a)+'</b>'+pl(cos,'εταιρεία','εταιρείες')+' · '+pl(calls,'κλήση','κλήσεις')+' · '+pl(offers,'προσφορά','προσφορές')+'</div>'});
+ h+='<div class="tsum">';accs.forEach(function(a){var calls=0,offers=0,cos=0,favs=0,clc=0;Object.keys(A[a]).forEach(function(n){var r=A[a][n];if(!r||!active(r))return;cos++;if(r.fav)favs++;if(r.called||(r.calls&&r.calls.length))clc++;calls+=(r.calls||[]).length;if(hasOffer(r))offers++});
+  h+='<div class="'+(a===String(ACC)?'me':'')+'"><b>Λογαριασμός '+esc(a)+'</b>'+pl(cos,'εταιρεία','εταιρείες')+' · '+favs+' ★ · '+pl(clc,'κλήθηκε','κλήθηκαν')+' · '+pl(calls,'κλήση','κλήσεις')+' · '+pl(offers,'προσφορά','προσφορές')+'</div>'});
  h+='</div></div>';
  var rows=[];C.forEach(function(c){var acts=[],last=0;accs.forEach(function(a){var r=A[a][c.name];if(!active(r))return;if(!(r.called||(r.calls&&r.calls.length)||hasOffer(r)))return;acts.push({a:a,r:r});last=Math.max(last,r.u||0)});if(acts.length)rows.push({c:c,acts:acts,last:last})});
  rows.sort(function(x,y){return y.last-x.last});
@@ -222,10 +236,10 @@ function renderTeam(){var A=allAcc(),accs=Object.keys(A).filter(function(a){retu
   h+='</div>'});
  $('teamview').innerHTML=h}
 // ---------- views ----------
-var cur='list',VIEWS=['list','fav','team','map','compare','menu'];
+var cur='list',VIEWS=['list','fav','called','team','map','compare','menu'];
 function show(v){if(VIEWS.indexOf(v)<0)v='list';cur=v;VIEWS.forEach(function(x){$('v-'+x).hidden=(x!==v)});document.body.setAttribute('data-view',v);
- document.querySelectorAll('#tabs a').forEach(function(a){var on=a.dataset.v===v;a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
- if(v==='list'&&listStale){listStale=false;render()}if(v==='map')initMap();if(v==='compare')renderCompare();if(v==='fav')renderFav();if(v==='team')renderTeam();if(v==='menu')renderMenu();
+ document.querySelectorAll('#tabs a').forEach(function(a){var on=a.dataset.v===v||(v==='compare'&&a.dataset.v==='menu');a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+ if(v==='list'&&listStale){listStale=false;render()}if(v==='map')initMap();if(v==='compare')renderCompare();if(v==='fav')renderFav();if(v==='called')renderCalled();if(v==='team')renderTeam();if(v==='menu')renderMenu();
  if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);window.scrollTo(0,0)}
 $('tabs').addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;e.preventDefault();if(a.dataset.v===cur&&cur==='list'){window.scrollTo({top:0,behavior:'smooth'});return}show(a.dataset.v)});
 window.addEventListener('hashchange',function(){var v=location.hash.slice(1);if(v&&v!==cur)show(v)});
@@ -307,7 +321,7 @@ var Sync=(function(){
  function soon(){chip();if(!url())return;clearTimeout(t);t=setTimeout(run,1200)}
  return {run:run,soon:soon,url:url,chip:chip,pending:pending,setUrl:function(v){lsSet('kat5_url',v||'');chip()}}})();
 function editing(){var a=document.activeElement;return a&&a.closest&&a.closest('#cards')&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)}
-function refresh(){if(cur==='list')render();else{updStats();if(cur==='fav')renderFav();if(cur==='team')renderTeam();if(cur==='compare')renderCompare();if(cur==='map'&&mapReady)drawMarkers();listStale=true}}
+function refresh(){if(cur==='list')render();else{updStats();if(cur==='fav')renderFav();if(cur==='called')renderCalled();if(cur==='team')renderTeam();if(cur==='compare')renderCompare();if(cur==='map'&&mapReady)drawMarkers();listStale=true}}
 var listStale=false;
 window.addEventListener('online',function(){Sync.soon()});window.addEventListener('offline',function(){Sync.chip()});
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&ACC)Sync.soon()});
@@ -347,6 +361,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=7').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=8').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();

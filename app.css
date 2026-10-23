@@ -198,6 +198,10 @@ ul.tips{padding-left:18px;margin:6px 0}ul.tips li{margin:6px 0;font-size:14px}
 .tabbar a.on{color:var(--navy)}
 .tabbar a.on svg{stroke-width:2.3}
 .tabbar a[data-v=fav].on svg{fill:var(--star);stroke:var(--star)}
+.tabbar .cnt.ok{background:#1E8E3E;color:#fff}
+.menulink{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;border:0;cursor:pointer;min-height:56px}
+.menulink>span{font-size:24px}.menulink b{flex:1;display:flex;flex-direction:column;font-size:16px}.menulink small{font-weight:400;font-size:12.5px;color:#5F6B7A;margin-top:2px}.menulink i{font-style:normal;font-size:24px;color:#9AA5B1}
+.ccount{display:inline-block;background:#EEF2F6;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;margin-left:4px}
 .tabbar .cnt{position:absolute;top:3px;left:calc(50% + 6px);font-style:normal;background:var(--star);color:#1b2430;border-radius:999px;font-size:10px;font-weight:800;min-width:17px;height:17px;display:flex;align-items:center;justify-content:center;padding:0 4px}
 .tabbar .cnt.alt{background:#E8590C;color:#fff}
 /* login */
