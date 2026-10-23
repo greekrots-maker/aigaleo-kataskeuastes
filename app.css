@@ -244,3 +244,5 @@ table.cmp thead .favbtn.on{background:#FFF6D9;border-color:#F2CF5B;color:var(--s
 .blform textarea{font:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;resize:vertical;min-height:84px;width:100%;box-sizing:border-box}.bl-upd{margin-top:4px;color:var(--sub)}#blback[hidden]{display:none}
 
 .plot{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:5px}.plot li{font-size:11.5px;line-height:1.25;font-weight:600;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:3px 8px;white-space:nowrap}.plot li span{font-weight:500;opacity:.75}.plot li em{font-style:normal;font-weight:500;opacity:.8}@media(max-width:374px){.plot{gap:4px}.plot li{font-size:10.5px;padding:3px 7px}}
+
+.inl-note{margin-top:6px;color:var(--sub)}
