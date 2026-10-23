@@ -378,7 +378,7 @@ $('loginf').addEventListener('submit',async function(e){e.preventDefault();var v
  if(!/^\d{1,3}$/.test(v)||!(n>=1&&n<=999)){$('lerr').textContent='Γράψε έναν αριθμό από 1 έως 999.';return}
  if(ACC&&n!==ACC&&Sync.pending()&&Sync.url()){await Sync.run()}
  login(n)});
-function login(n){lsSet('kat5_acct',n);loadAcct(n);migrateV4();$('acctn').textContent=n;$('login').hidden=true;UI={offer:{},more:{},log:{},bl:{}};F.only='';render();show(cur);Sync.chip();if(Sync.url())Sync.run();toast('Λογαριασμός '+n)}
+function login(n){lsSet('kat5_acct',n);loadAcct(n);migrateV4();$('acctn').textContent=n;$('login').hidden=true;UI={offer:{},more:{},log:{},bl:{},ble:{},bld:{}};F.only='';render();show(cur);Sync.chip();if(Sync.url())Sync.run();toast('Λογαριασμός '+n)}
 function migrateV4(){if(localStorage.getItem('kat5_migrated'))return;var old=lsGet('kat_aigaleo_v1',null);if(!old||!Object.keys(old).length){try{localStorage.setItem('kat5_migrated','none')}catch(e){}return}
  var k=0;Object.keys(old).forEach(function(n){var o=old[n];if(!byName(n)||!o)return;var r=recs[n]||(recs[n]={});
   if(o.called){r.called=true;r.calledAt=r.calledAt||o.u||Date.now()}if(o.note)r.note=o.note;if(o.offer&&hasOffer(o))r.offer=o.offer;if(o.fav)r.fav=true;r.u=Date.now();dirty[n]=1;k++});
@@ -389,6 +389,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=11').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=11.1').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();
