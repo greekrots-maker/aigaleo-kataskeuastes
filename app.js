@@ -135,7 +135,7 @@ function updStats(){var mine=0,offers=0;C.forEach(function(c){var r=rec(c.name);
  var ms=$('mystats');if(ms)ms.textContent='Εσύ (Λογ. '+ACC+'): '+pl(mine,'κλήση','κλήσεις')+' · '+pl(offers,'προσφορά','προσφορές')+' · Ομάδα: '+Object.keys(tc).length+'/'+C.length+' εταιρείες σε επαφή';
  var fb=$('favn'),fc=favCount();fb.textContent=fc;fb.hidden=!fc;
  var cb=$('calln');if(cb){var cn=calledList().length;cb.textContent=cn;cb.hidden=!cn}
- var bb=$('bln');if(bb){var bn=blCount();bb.textContent=bn;bb.hidden=!bn}
+ var bn=blCount();['bln','blnt'].forEach(function(id){var bb=$(id);if(bb){bb.textContent=bn;bb.hidden=!bn}})
  var tn=0;C.forEach(function(c){if(othersCalled(c.name).length)tn++});var tb=$('teamn');tb.textContent=tn;tb.hidden=!tn}
 function render(){
  var out=[];ordered().forEach(function(c){if(passes(c))out.push(card(c))});
@@ -258,7 +258,7 @@ function renderTeam(){var A=allAcc(),accs=Object.keys(A).filter(function(a){retu
 // ---------- views ----------
 var cur='list',VIEWS=['list','fav','called','team','map','compare','black','menu'];
 function show(v){if(VIEWS.indexOf(v)<0)v='list';cur=v;VIEWS.forEach(function(x){$('v-'+x).hidden=(x!==v)});document.body.setAttribute('data-view',v);
- document.querySelectorAll('#tabs a').forEach(function(a){var on=a.dataset.v===v||((v==='compare'||v==='black')&&a.dataset.v==='menu');a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+ document.querySelectorAll('#tabs a').forEach(function(a){var on=a.dataset.v===v||(v==='compare'&&a.dataset.v==='menu');a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
  if(v==='list'&&listStale){listStale=false;render()}if(v==='map')initMap();if(v==='compare')renderCompare();if(v==='fav')renderFav();if(v==='called')renderCalled();if(v==='black')renderBlack();if(v==='team')renderTeam();if(v==='menu')renderMenu();
  if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);window.scrollTo(0,0)}
 $('tabs').addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;e.preventDefault();if(a.dataset.v===cur&&cur==='list'){window.scrollTo({top:0,behavior:'smooth'});return}show(a.dataset.v)});
@@ -381,6 +381,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=9').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=10').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();
