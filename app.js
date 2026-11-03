@@ -299,6 +299,9 @@ window.addEventListener('hashchange',function(){var v=location.hash.slice(1);if(
 // ---------- map ----------
 var map=null,mapReady=false,layer=null,offLayer=null,ringLayer=null,leafletLoading=false;
 var TC={'Υψηλή':'#1E8E3E','Μέτρια':'#B86E00','Άγνωστη':'#5F6B7A','Χαμηλή':'#D93025'};
+// v17: Kallas-Red-style teardrop pins (Leaflet default shape) on a dark basemap
+var PC={'Υψηλή':'#2FA84F','Μέτρια':'#E08A1E','Άγνωστη':'#2A81CB','Χαμηλή':'#E5483B'};
+function pinIcon(fill,stroke,ap,kind){var w=kind==='fav'?28:24,h=Math.round(w*1.5);return L.divIcon({className:'kpin'+(kind?' '+kind:'')+(ap?' ap':''),html:'<svg viewBox="0 0 24 36" width="'+w+'" height="'+h+'" aria-hidden="true"><path d="M12 1C5.9 1 1 5.9 1 12c0 8.3 11 23 11 23s11-14.7 11-23C23 5.9 18.1 1 12 1z" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.6"'+(ap?' stroke-dasharray="3 2"':'')+'/><circle cx="12" cy="12" r="4.6" fill="#fff"/></svg>',iconSize:[w,h],iconAnchor:[w/2,h-1],popupAnchor:[0,-h+6]})}
 function loadLeaflet(cb){if(window.L)return cb();if(leafletLoading)return;leafletLoading=true;$('mapstat').textContent='Φόρτωση χάρτη…';
  var l=document.createElement('link');l.rel='stylesheet';l.href='vendor/leaflet/leaflet.css?v=1.9.4';document.head.appendChild(l);
  var s=document.createElement('script');s.src='vendor/leaflet/leaflet.js?v=1.9.4';s.onload=function(){leafletLoading=false;cb()};s.onerror=function(){leafletLoading=false;$('mapstat').textContent='Ο χάρτης δεν φόρτωσε (χρειάζεται σύνδεση).'};document.head.appendChild(s)}
@@ -308,10 +311,12 @@ function popup(c,p,isOff){var ph=c.phones[0];
 function initMap(){if(map){setTimeout(function(){map.invalidateSize()},60);return}
  loadLeaflet(function(){if(map)return;
   map=L.map('map',{tap:true}).setView([PLOT.lat,PLOT.lon],13);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+  var EB='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_';map.createPane('labels').style.zIndex=450;map.getPane('labels').style.pointerEvents='none';
+  L.tileLayer(EB+'Base/MapServer/tile/{z}/{y}/{x}',{maxNativeZoom:16,maxZoom:19,attribution:'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+  L.tileLayer(EB+'Reference/MapServer/tile/{z}/{y}/{x}',{maxNativeZoom:16,maxZoom:19,pane:'labels'}).addTo(map);
   var pi=L.divIcon({className:'plotm',html:'🏠',iconSize:[30,30],iconAnchor:[15,26]});
   L.marker([PLOT.lat,PLOT.lon],{icon:pi,zIndexOffset:1000,title:'Το οικόπεδό μου'}).addTo(map).bindPopup('<div class="pop"><b>Το οικόπεδό μου – Μαγνησίας 49</b><br>Αιγάλεω'+(PLOT.lvl==='exact'?'':'<br><span class="small">≈ θέση κατά προσέγγιση (επίπεδο οδού)</span>')+'</div>');
-  ringLayer=L.layerGroup([L.circle([PLOT.lat,PLOT.lon],{radius:1000,color:'#D93025',weight:1,dashArray:'4 4',fill:false,interactive:false}),L.circle([PLOT.lat,PLOT.lon],{radius:3000,color:'#D93025',weight:1,dashArray:'4 4',fill:false,interactive:false})]).addTo(map);
+  ringLayer=L.layerGroup([L.circle([PLOT.lat,PLOT.lon],{radius:1000,color:'#FF7A6E',weight:1,dashArray:'4 4',fill:false,interactive:false}),L.circle([PLOT.lat,PLOT.lon],{radius:3000,color:'#FF7A6E',weight:1,dashArray:'4 4',fill:false,interactive:false})]).addTo(map);
   layer=L.layerGroup().addTo(map);offLayer=L.layerGroup();
   ['m-off','m-ap','m-ring','m-fav'].forEach(function(id){$(id).addEventListener('change',drawMarkers)});
   mapReady=true;drawMarkers();if(pendingFocus){var f=pendingFocus;pendingFocus=null;focusCompany(f)}setTimeout(function(){map.invalidateSize()},80)})}
@@ -319,7 +324,8 @@ function drawMarkers(){if(!map)return;if(F.only&&isBl(F.only))F.only='';layer.cl
  var showAp=$('m-ap').checked,onlyFav=$('m-fav').checked;
  var ncl=0,nfv=0;C.forEach(function(c){if(!passes(c,true))return;if(onlyFav&&!isFav(c.name))return;var col=TC[c.trust],fv=isFav(c.name),dim=!fv&&inCalledOnly(c.name);if(dim)ncl++;if(fv)nfv++;
   c.pins.forEach(function(p){if(p.lat==null)return;var ap=p.lvl!=='exact';if(ap&&!showAp)return;
-   L.circleMarker([p.lat,p.lon],fv?{radius:ap?8:9,color:'#9A6B00',weight:3,dashArray:ap?'3 3':null,fillColor:'#FFC107',fillOpacity:ap?0.35:0.95}:dim?{radius:ap?6:7,color:'#8A94A6',weight:2,dashArray:ap?'3 3':null,fillColor:'#C3CAD5',fillOpacity:ap?0.15:0.6,opacity:0.8}:{radius:ap?7:8,color:col,weight:2,dashArray:ap?'3 3':null,fillColor:col,fillOpacity:ap?0.18:0.85}).bindPopup(popup(c,p,false)).addTo(layer);n++;if(ap)na++});
+   var ic=fv?pinIcon('#FFC107','#7A5200',ap,'fav'):dim?pinIcon('#9AA3AF','#4B5563',ap,'called'):pinIcon(PC[c.trust]||'#2A81CB','rgba(0,0,0,.45)',ap,'');
+   L.marker([p.lat,p.lon],{icon:ic,title:c.name,zIndexOffset:fv?600:dim?-200:(ap?0:200)}).bindPopup(popup(c,p,false)).addTo(layer);n++;if(ap)na++});
   c.offices.forEach(function(o){if(o.lat==null)return;L.marker([o.lat,o.lon],{icon:L.divIcon({className:'offm',html:'<span style="color:'+col+'">■</span>',iconSize:[14,14]})}).bindPopup(popup(c,o,true)).addTo(offLayer)})});
  if($('m-off').checked)offLayer.addTo(map);else map.removeLayer(offLayer);
  if($('m-ring').checked)ringLayer.addTo(map);else map.removeLayer(ringLayer);
@@ -468,6 +474,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=16').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=17').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();

@@ -162,17 +162,21 @@ a.src{font-size:12px;white-space:nowrap}
 .onlybar{background:#E7EDF7;border-radius:12px;padding:8px 10px;margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .onlybar button{border:0;background:var(--navy);color:#fff;border-radius:10px;padding:8px 12px;font-size:13px;min-height:38px}
 /* map */
-#map{height:60vh;min-height:340px;border-radius:var(--r);margin:0 0 8px;z-index:1;box-shadow:var(--sh);background:#E6EBF0}
+#map{height:62vh;min-height:360px;border-radius:0;margin:0 -12px 8px;z-index:1;box-shadow:none;background:#272727}
+#map .leaflet-tile-pane{filter:sepia(.45) saturate(1.25) brightness(.78) contrast(1.12)}#map .leaflet-labels-pane{filter:brightness(1.25)}
+#map .leaflet-control-attribution{background:rgba(39,39,39,.75);color:#bbb}#map .leaflet-control-attribution a{color:#8fc3ff}
+.kpin{background:none;border:0}.kpin svg{display:block;filter:drop-shadow(0 2px 2px rgba(0,0,0,.55))}.kpin.ap{opacity:.62}.kpin.called{opacity:.85}
+.leaflet-popup-content .pop>b:first-child{color:#2A81CB}
 .frow.light label{display:flex;gap:6px;align-items:center;font-size:13px;background:var(--soft);border:1px solid var(--line);padding:6px 10px;border-radius:10px;white-space:nowrap;min-height:38px}
 .frow.light input{width:18px;height:18px}
-.lg{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:middle;border:2px solid var(--navy)}
-.lg-ex{background:var(--navy)}.lg-ap{background:transparent;border-style:dashed}
+.lg{display:inline-block;width:10px;height:10px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);vertical-align:middle;border:2px solid #2A81CB;margin:0 2px}
+.lg-ex{background:#2A81CB}.lg-ap{background:rgba(42,129,203,.35);border-style:dashed}.lg-fav{background:#FFC107;border-color:#7A5200}.lg-cl{background:#9AA3AF;border-color:#4B5563}
 .leaflet-popup-content{font-size:13.5px;line-height:1.4;margin:11px 13px}
 .leaflet-popup-content-wrapper{border-radius:14px}
 .pop .pb{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
 .pop .pb a,.pop .pb .open{border:0;border-radius:10px;padding:8px 11px;font-size:13.5px;font-weight:650;text-decoration:none;min-height:38px;display:inline-flex;align-items:center}
 .pop .call{background:var(--hi);color:#fff!important}.pop .open{background:var(--navy);color:#fff}
-.offm{font-size:15px;line-height:1;text-shadow:0 0 2px #fff}
+.offm{font-size:15px;line-height:1;text-shadow:0 0 3px #000,0 0 1px #fff}
 .plotm{font-size:26px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
 /* compare */
 .cmpwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px -14px 0;padding:0 14px}
