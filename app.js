@@ -72,7 +72,7 @@ var hay={};C.forEach(function(c){hay[c.name]=norm([c.name,c.role,c.area,c.addres
 function passes(c,forMap){
   if(isBl(c.name))return false;
   if(F.only)return c.name===F.only;
-  if(!forMap&&inCalledOnly(c.name)&&!UI.keep[c.name])return false;
+  if(!forMap&&(inCalledOnly(c.name)||isFav(c.name))&&!UI.keep[c.name])return false;
   var tf=Object.keys(F.trust).filter(function(k){return F.trust[k]});
   if(tf.length&&tf.indexOf(c.trust)<0)return false;
   var rf=Object.keys(F.role).filter(function(k){return F.role[k]});
@@ -154,7 +154,7 @@ function updStats(){var mine=0,offers=0;C.forEach(function(c){var r=rec(c.name);
 function render(){
  if(F.only&&isBl(F.only))F.only='';
  var out=[];ordered().forEach(function(c){if(passes(c))out.push(card(c))});
- var nb=blCount(),nc=calledOnlyCount(),av=C.length-nb-nc,ex=[];if(nc)ex.push('+'+nc+' κάλεσες');if(nb)ex.push('+'+nb+' μαύρη λίστα');
+ var nb=blCount(),nf=favCount(),nc=0;C.forEach(function(c){if(inCalledOnly(c.name)&&!isFav(c.name))nc++});var av=C.length-nb-nc-nf,ex=[];if(nf)ex.push('+'+nf+' αγαπημένα');if(nc)ex.push('+'+nc+' κάλεσες');if(nb)ex.push('+'+nb+' μαύρη λίστα');
  $('count').textContent='Εμφανίζονται '+out.length+(out.length!==av&&!F.only?' από '+av:'')+(ex.length?' ('+ex.join(', ')+')':'')+(F.sort==='dist'?' · σειρά: πιο κοντά στο οικόπεδο':'');
  $('cards').innerHTML=out.join('')||'<div class="empty"><span class="ei">🔎</span><b>Καμία εταιρεία</b>Δεν βρέθηκε αποτέλεσμα με αυτά τα φίλτρα.<div class="row" style="justify-content:center"><button class="minibtn" type="button" data-reset="1">Καθαρισμός φίλτρων</button></div></div>';
  var ob=$('onlybar');if(F.only){ob.hidden=false;ob.innerHTML='<span>Μόνο: <b>'+esc(F.only)+'</b></span><button type="button" id="onlyx">✕ Όλες</button>'}else{ob.hidden=true;ob.innerHTML=''}
@@ -207,7 +207,7 @@ document.addEventListener('click',function(e){var b=e.target.closest('.favbtn');
  var bo=e.target.closest('.ble-ok');if(bo){var on=bo.dataset.n,tt=[].filter.call(document.querySelectorAll('#blacklist .ble-t'),function(t){return t.dataset.n===on})[0],nv=tt?tt.value.trim():'';delete UI.ble[on];delete UI.bld[on];change(on,function(r){r.blr=nv;r.blu=Date.now()});refresh();if(cur==='black')renderBlack();toast(nv?'✏️ Ο λόγος ενημερώθηκε':'✏️ Ο λόγος διαγράφηκε');return}
  var cx=e.target.closest('.cmpx');if(cx){var xn=cx.dataset.n;setCmp(xn,false);renderCompare();toast('Αφαιρέθηκε από τη σύγκριση');return}
  var ce=e.target.closest('.cmped');if(ce){var en2=ce.dataset.n;UI.offer[en2]=true;openCompany(en2);setTimeout(function(){var c=byName(en2),el=c&&$('c'+c.prio),d=el&&el.querySelector('details.offer');if(d){d.open=true;d.scrollIntoView({block:'start'})}},60);return}
- var cb=e.target.closest('.cl-back');if(cb){var cn=cb.dataset.n,hl=!!(rec(cn).calls||[]).length;change(cn,function(r){r.called=false;r.calledAt=null;r.inl=hl?Date.now():0});refresh();if(cur==='called')renderCalled();toast('↩ Επέστρεψε στη λίστα: '+cn);return}
+ var cb=e.target.closest('.cl-back');if(cb){var cn=cb.dataset.n,hl=!!(rec(cn).calls||[]).length;change(cn,function(r){r.called=false;r.calledAt=null;r.inl=hl?Date.now():0});refresh();if(cur==='called')renderCalled();toast(isFav(cn)?'↩ Αφαιρέθηκε το «Κάλεσα» · μένει στα ★ Αγαπημένα: '+cn:'↩ Επέστρεψε στη λίστα: '+cn);return}
  var ch=e.target.closest('.cl-hide');if(ch){var hn=ch.dataset.n;change(hn,function(r){r.inl=0});refresh();if(cur==='called')renderCalled();toast('↪ Μόνο στα «Κάλεσα»: '+hn);return}
  var br=e.target.closest('.blrest');if(br){var bn=br.dataset.n;change(bn,function(r){r.bl=0;r.blr='';r.blu=0});delete UI.ble[bn];delete UI.bld[bn];refresh();if(cur==='black')renderBlack();toast('↩ Επανήλθε: '+bn);return}
  var g=e.target.closest('[data-go]');if(g){e.preventDefault();BLM=(g.dataset.go==='black'&&cur==='menu');show(g.dataset.go)}},true);
@@ -217,14 +217,14 @@ document.addEventListener('change',function(e){var t=e.target;if(!t||!t.closest|
  else if(t.id==='cmpoth'){lsSet('kat5_cmpo',t.checked);renderCompare()}});
 document.addEventListener('toggle',function(e){if(e.target&&e.target.classList&&e.target.classList.contains('cmppick'))UI.cmpPick=e.target.open},true);
 document.addEventListener('input',function(e){var t=e.target;if(t.classList&&t.classList.contains('ble-t'))UI.bld[t.dataset.n]=t.value});
-function toggleFav(n){var f=!isFav(n);change(n,function(r){r.fav=f});
+function toggleFav(n){var f=!isFav(n);if(f&&cur==='list'&&!F.only)UI.keep[n]=true;change(n,function(r){r.fav=f});if(cur!=='list'||F.only)listStale=true;
  document.querySelectorAll('.favbtn').forEach(function(b){if(b.dataset.n===n){b.classList.toggle('on',f);b.textContent=f?'★':'☆';b.setAttribute('aria-pressed',f);b.setAttribute('aria-label',f?'Αφαίρεση από τα αγαπημένα':'Προσθήκη στα αγαπημένα')}});
- toast(f?'★ Προστέθηκε στα αγαπημένα':'Αφαιρέθηκε από τα αγαπημένα');
- if(cur==='fav')renderFav();if(cur==='called')renderCalled();if(mapReady&&$('m-fav').checked)drawMarkers()}
+ var bk=!f&&(inCalledOnly(n)||isBl(n));toast(f?'★ Πήγε στα Αγαπημένα':(bk?'Αφαιρέθηκε από τα αγαπημένα':'☆ Αφαιρέθηκε από τα αγαπημένα · επέστρεψε στη Λίστα'));
+ if(cur==='fav')renderFav();if(cur==='called')renderCalled();if(mapReady){if(map&&map._popup&&map.hasLayer(map._popup))map.once('popupclose',drawMarkers);else drawMarkers()}}
 function openCompany(n){var c=byName(n);if(!c)return;F.only=n;show('list');render();var el=$('c'+c.prio);if(el)el.scrollIntoView({block:'start'})}
 // ---------- favourites view ----------
 function renderFav(){var fs=C.filter(function(c){return isFav(c.name)});
- if(!fs.length){$('favlist').innerHTML='<div class="empty"><span class="ei">☆</span><b>Δεν έχεις αγαπημένα ακόμη</b>Πάτα το ☆ σε μια εταιρεία (στη λίστα ή στον χάρτη) για να τη βρίσκεις γρήγορα εδώ.<div class="row" style="justify-content:center"><button class="minibtn pri" type="button" data-go="list">Στη λίστα</button></div></div>';return}
+ if(!fs.length){$('favlist').innerHTML='<div class="empty"><span class="ei">☆</span><b>Δεν έχεις αγαπημένα ακόμη</b>Πάτα το ☆ σε μια εταιρεία (στη λίστα ή στον χάρτη): φεύγει από τη Λίστα και τη βρίσκεις εδώ. Με ★ → ☆ επιστρέφει στη Λίστα.<div class="row" style="justify-content:center"><button class="minibtn pri" type="button" data-go="list">Στη λίστα</button></div></div>';return}
  var h='<div class="panel"><h2>★ Αγαπημένα <span class="small">('+fs.length+')</span></h2><p class="small">Του Λογαριασμού '+esc(ACC)+'. Αποθηκεύονται στη συσκευή και συγχρονίζονται.</p></div>';
  fs.forEach(function(c){var r=rec(c.name),lc=lastCall(r);
   h+='<article class="fcard"><div class="row1"><div class="prio">'+c.prio+'</div><div class="hn"><h2>'+esc(c.name)+'</h2><div class="tags">'+trustB(c)+(r.called?'<span class="tag done">✓ Κάλεσα'+(r.calledAt?' '+fdt(r.calledAt):'')+'</span>':'')+(hasOffer(r)?'<span class="tag aig">💼 Προσφορά</span>':'')+'</div></div>'+star(c.name)+'</div>';
@@ -317,13 +317,13 @@ function initMap(){if(map){setTimeout(function(){map.invalidateSize()},60);retur
   mapReady=true;drawMarkers();if(pendingFocus){var f=pendingFocus;pendingFocus=null;focusCompany(f)}setTimeout(function(){map.invalidateSize()},80)})}
 function drawMarkers(){if(!map)return;if(F.only&&isBl(F.only))F.only='';layer.clearLayers();offLayer.clearLayers();var n=0,na=0;
  var showAp=$('m-ap').checked,onlyFav=$('m-fav').checked;
- var ncl=0;C.forEach(function(c){if(!passes(c,true))return;if(onlyFav&&!isFav(c.name))return;var col=TC[c.trust],dim=inCalledOnly(c.name);if(dim)ncl++;
+ var ncl=0,nfv=0;C.forEach(function(c){if(!passes(c,true))return;if(onlyFav&&!isFav(c.name))return;var col=TC[c.trust],fv=isFav(c.name),dim=!fv&&inCalledOnly(c.name);if(dim)ncl++;if(fv)nfv++;
   c.pins.forEach(function(p){if(p.lat==null)return;var ap=p.lvl!=='exact';if(ap&&!showAp)return;
-   L.circleMarker([p.lat,p.lon],dim?{radius:ap?6:7,color:'#8A94A6',weight:2,dashArray:ap?'3 3':null,fillColor:'#C3CAD5',fillOpacity:ap?0.15:0.6,opacity:0.8}:{radius:ap?7:8,color:col,weight:2,dashArray:ap?'3 3':null,fillColor:col,fillOpacity:ap?0.18:0.85}).bindPopup(popup(c,p,false)).addTo(layer);n++;if(ap)na++});
+   L.circleMarker([p.lat,p.lon],fv?{radius:ap?8:9,color:'#9A6B00',weight:3,dashArray:ap?'3 3':null,fillColor:'#FFC107',fillOpacity:ap?0.35:0.95}:dim?{radius:ap?6:7,color:'#8A94A6',weight:2,dashArray:ap?'3 3':null,fillColor:'#C3CAD5',fillOpacity:ap?0.15:0.6,opacity:0.8}:{radius:ap?7:8,color:col,weight:2,dashArray:ap?'3 3':null,fillColor:col,fillOpacity:ap?0.18:0.85}).bindPopup(popup(c,p,false)).addTo(layer);n++;if(ap)na++});
   c.offices.forEach(function(o){if(o.lat==null)return;L.marker([o.lat,o.lon],{icon:L.divIcon({className:'offm',html:'<span style="color:'+col+'">■</span>',iconSize:[14,14]})}).bindPopup(popup(c,o,true)).addTo(offLayer)})});
  if($('m-off').checked)offLayer.addTo(map);else map.removeLayer(offLayer);
  if($('m-ring').checked)ringLayer.addTo(map);else map.removeLayer(ringLayer);
- $('mapstat').textContent=n+' σημεία έργων'+(na?' ('+na+' κατά προσέγγιση)':'')+(F.only?' · μόνο '+F.only:'')+(onlyFav?' · μόνο αγαπημένα ('+favCount()+')':'')+(ncl?' · '+ncl+' που κάλεσες σε γκρι':'')+' · '+DATA.geo.excluded+' τοποθεσίες δεν μπήκαν (πολύ γενικές ή αβέβαιες).'}
+ $('mapstat').textContent=n+' σημεία έργων'+(na?' ('+na+' κατά προσέγγιση)':'')+(F.only?' · μόνο '+F.only:'')+(onlyFav?' · μόνο αγαπημένα ('+favCount()+')':'')+(nfv&&!onlyFav?' · ★ '+nfv+' αγαπημένα σε χρυσό':'')+(ncl?' · '+ncl+' που κάλεσες σε γκρι':'')+' · '+DATA.geo.excluded+' τοποθεσίες δεν μπήκαν (πολύ γενικές ή αβέβαιες).'}
 var pendingFocus=null;
 function focusCompany(c){if(!c)return;F.only=c.name;render();if(!map){pendingFocus=c;return}var pts=[];c.pins.forEach(function(p){if(p.lat!=null)pts.push([p.lat,p.lon])});c.offices.forEach(function(o){if(o.lat!=null)pts.push([o.lat,o.lon])});pts.push([PLOT.lat,PLOT.lon]);map.fitBounds(pts,{padding:[30,30],maxZoom:15})}
 // ---------- compare ----------
@@ -468,6 +468,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=15.1').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=16').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();
