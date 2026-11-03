@@ -85,7 +85,8 @@ function passes(c,forMap){
   var q=norm(F.q.trim());if(q&&q.split(/\s+/).some(function(w){return hay[c.name].indexOf(w)<0}))return false;
   return true}
 function nFilters(){var n=Object.keys(F.trust).filter(function(k){return F.trust[k]}).length+Object.keys(F.role).filter(function(k){return F.role[k]}).length;if(F.ant)n++;if(F.area)n++;if(F.new)n++;if(F.todo)n++;if(F.nobody)n++;if(F.sort!=='prio')n++;return n}
-function rateCmp(x,y){var a=x.gr&&x.gr.r!=null,b=y.gr&&y.gr.r!=null;if(a!==b)return a?-1:1;if(a){if(y.gr.r!==x.gr.r)return y.gr.r-x.gr.r;if((y.gr.n||0)!==(x.gr.n||0))return (y.gr.n||0)-(x.gr.n||0)}return x.prio-y.prio}
+var TRO={'Υψηλή':0,'Μέτρια':1,'Χαμηλή':2,'Άγνωστη':3};
+function rateCmp(x,y){var tx=TRO[x.trust],ty=TRO[y.trust];tx=tx==null?3:tx;ty=ty==null?3:ty;if(tx!==ty)return tx-ty;var a=x.gr&&x.gr.r!=null,b=y.gr&&y.gr.r!=null;if(a!==b)return a?-1:1;if(a){if(y.gr.r!==x.gr.r)return y.gr.r-x.gr.r;if((y.gr.n||0)!==(x.gr.n||0))return (y.gr.n||0)-(x.gr.n||0)}return x.prio-y.prio}
 function ordered(){var a=C.slice();if(F.sort==='prio')a.sort(rateCmp);if(F.sort==='dist')a.sort(function(x,y){return (x.near?x.near.km:1e9)-(y.near?y.near.km:1e9)||x.prio-y.prio});return a}
 // ---------- cards ----------
 var UI={offer:{},more:{},log:{},bl:{},ble:{},bld:{},keep:{}},BLM=false;
@@ -224,7 +225,7 @@ function toggleFav(n){var f=!isFav(n);if(f&&cur==='list'&&!F.only)UI.keep[n]=tru
  if(cur==='fav')renderFav();if(cur==='called')renderCalled();if(mapReady){if(map&&map._popup&&map.hasLayer(map._popup))map.once('popupclose',drawMarkers);else drawMarkers()}}
 function openCompany(n){var c=byName(n);if(!c)return;F.only=n;show('list');render();var el=$('c'+c.prio);if(el)el.scrollIntoView({block:'start'})}
 // ---------- favourites view ----------
-function renderFav(){var fs=C.filter(function(c){return isFav(c.name)});
+function renderFav(){var fs=C.filter(function(c){return isFav(c.name)}).sort(rateCmp);
  if(!fs.length){$('favlist').innerHTML='<div class="empty"><span class="ei">☆</span><b>Δεν έχεις αγαπημένα ακόμη</b>Πάτα το ☆ σε μια εταιρεία (στη λίστα ή στον χάρτη): φεύγει από τη Λίστα και τη βρίσκεις εδώ. Με ★ → ☆ επιστρέφει στη Λίστα.<div class="row" style="justify-content:center"><button class="minibtn pri" type="button" data-go="list">Στη λίστα</button></div></div>';return}
  var h='<div class="panel"><h2>★ Αγαπημένα <span class="small">('+fs.length+')</span></h2><p class="small">Του Λογαριασμού '+esc(ACC)+'. Αποθηκεύονται στη συσκευή και συγχρονίζονται.</p></div>';
  fs.forEach(function(c){var r=rec(c.name),lc=lastCall(r);
@@ -241,7 +242,7 @@ function renderFav(){var fs=C.filter(function(c){return isFav(c.name)});
  $('favlist').innerHTML=h}
 // ---------- called view ----------
 function callTime(r){var lc=lastCall(r);return Math.max(lc?lc.at:0,r.calledAt||0)}
-function calledList(){return C.filter(function(c){var r=rec(c.name);return r&&!r.bl&&(r.called||(r.calls&&r.calls.length))}).sort(function(a,b){return callTime(rec(b.name))-callTime(rec(a.name))})}
+function calledList(){return C.filter(function(c){var r=rec(c.name);return r&&!r.bl&&(r.called||(r.calls&&r.calls.length))}).sort(function(a,b){return rateCmp(a,b)||callTime(rec(b.name))-callTime(rec(a.name))})}
 function renderCalled(){var ls=calledList();
  if(!ls.length){$('calledlist').innerHTML='<div class="empty"><span class="ei">📞</span><b>Δεν έχεις καλέσει καμία εταιρεία ακόμη</b>Όταν πατήσεις «Κάλεσα» ή «＋ Καταγραφή κλήσης» σε μια κάρτα, η εταιρεία θα εμφανιστεί εδώ, με την πιο πρόσφατη κλήση πρώτη.<div class="row" style="justify-content:center"><button class="minibtn pri" type="button" data-go="list">Στη λίστα</button></div></div>';return}
  var h='<div class="panel"><h2>📞 Κάλεσα <span class="small">('+ls.length+')</span></h2><p class="small">Του Λογαριασμού '+esc(ACC)+', πιο πρόσφατη κλήση πρώτη. Συγχρονίζονται με την ομάδα.</p></div>';
@@ -475,6 +476,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=18').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=19').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();
