@@ -85,7 +85,8 @@ function passes(c,forMap){
   var q=norm(F.q.trim());if(q&&q.split(/\s+/).some(function(w){return hay[c.name].indexOf(w)<0}))return false;
   return true}
 function nFilters(){var n=Object.keys(F.trust).filter(function(k){return F.trust[k]}).length+Object.keys(F.role).filter(function(k){return F.role[k]}).length;if(F.ant)n++;if(F.area)n++;if(F.new)n++;if(F.todo)n++;if(F.nobody)n++;if(F.sort!=='prio')n++;return n}
-function ordered(){var a=C.slice();if(F.sort==='dist')a.sort(function(x,y){return (x.near?x.near.km:1e9)-(y.near?y.near.km:1e9)||x.prio-y.prio});return a}
+function rateCmp(x,y){var a=x.gr&&x.gr.r!=null,b=y.gr&&y.gr.r!=null;if(a!==b)return a?-1:1;if(a){if(y.gr.r!==x.gr.r)return y.gr.r-x.gr.r;if((y.gr.n||0)!==(x.gr.n||0))return (y.gr.n||0)-(x.gr.n||0)}return x.prio-y.prio}
+function ordered(){var a=C.slice();if(F.sort==='prio')a.sort(rateCmp);if(F.sort==='dist')a.sort(function(x,y){return (x.near?x.near.km:1e9)-(y.near?y.near.km:1e9)||x.prio-y.prio});return a}
 // ---------- cards ----------
 var UI={offer:{},more:{},log:{},bl:{},ble:{},bld:{},keep:{}},BLM=false;
 function star(n,cls){var f=isFav(n);return '<button type="button" class="favbtn'+(f?' on':'')+(cls?' '+cls:'')+'" data-n="'+esc(n)+'" aria-pressed="'+f+'" aria-label="'+(f?'Αφαίρεση από τα αγαπημένα':'Προσθήκη στα αγαπημένα')+'">'+(f?'★':'☆')+'</button>'}
@@ -474,6 +475,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=17').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=18').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();
