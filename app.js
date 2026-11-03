@@ -64,17 +64,19 @@ function allAcc(){var A={};Object.keys(team.accounts||{}).forEach(function(a){A[
 function active(r){return r&&(r.bl||r.called||(r.calls&&r.calls.length)||hasOffer(r)||r.fav||(r.note&&r.note.trim()))}
 function othersCalled(n){var out=[];var A=team.accounts||{};Object.keys(A).forEach(function(a){if(a===String(ACC))return;var r=A[a][n];if(r&&(r.called||(r.calls&&r.calls.length)))out.push({a:a,r:r})});return out}
 // ---------- filters ----------
-var F={trust:{},ant:'',area:'',new:false,todo:false,nobody:false,q:'',only:'',sort:'prio'};
+var F={trust:{},role:{},ant:'',area:'',new:false,todo:false,nobody:false,q:'',only:'',sort:'prio'};
 var areas={};C.forEach(function(c){c.areas.forEach(function(a){areas[a]=(areas[a]||0)+1})});
 var sel=$('area');
-['Αιγάλεω','Χαϊδάρι','Περιστέρι','Πετρούπολη','Ίλιον','Αγ. Ανάργυροι / Καματερό','Νίκαια / Κορυδαλλός','Άλλη Αττική'].forEach(function(a){if(areas[a]){var o=document.createElement('option');o.value=a;o.textContent=a+' ('+areas[a]+')';sel.appendChild(o)}});
-var hay={};C.forEach(function(c){hay[c.name]=norm([c.name,c.area,c.address,c.whatdo,c.services,c.gemi,c.summary,c.projects.map(function(p){return p.html.replace(/<[^>]+>/g,'')}).join(' '),c.phones_raw].join(' '))});
+['Αιγάλεω','Χαϊδάρι','Αγ. Βαρβάρα','Περιστέρι','Πετρούπολη','Ίλιον','Αγ. Ανάργυροι / Καματερό','Νίκαια / Κορυδαλλός','Άλλη Αττική'].forEach(function(a){if(areas[a]){var o=document.createElement('option');o.value=a;o.textContent=a+' ('+areas[a]+')';sel.appendChild(o)}});
+var hay={};C.forEach(function(c){hay[c.name]=norm([c.name,c.role,c.area,c.address,c.whatdo,c.services,c.gemi,c.summary,c.projects.map(function(p){return p.html.replace(/<[^>]+>/g,'')}).join(' '),c.phones_raw].join(' '))});
 function passes(c,forMap){
   if(isBl(c.name))return false;
   if(F.only)return c.name===F.only;
   if(!forMap&&inCalledOnly(c.name)&&!UI.keep[c.name])return false;
   var tf=Object.keys(F.trust).filter(function(k){return F.trust[k]});
   if(tf.length&&tf.indexOf(c.trust)<0)return false;
+  var rf=Object.keys(F.role).filter(function(k){return F.role[k]});
+  if(rf.length&&rf.indexOf(c.role)<0)return false;
   if(F.ant==='yes'&&!c.ant)return false;if(F.ant==='no'&&c.ant)return false;
   if(F.area&&c.areas.indexOf(F.area)<0)return false;
   if(F.new&&!c.new)return false;
@@ -82,7 +84,7 @@ function passes(c,forMap){
   if(F.nobody){var A=allAcc();for(var a in A){var x=A[a][c.name];if(x&&(x.called||(x.calls&&x.calls.length)))return false}}
   var q=norm(F.q.trim());if(q&&q.split(/\s+/).some(function(w){return hay[c.name].indexOf(w)<0}))return false;
   return true}
-function nFilters(){var n=Object.keys(F.trust).filter(function(k){return F.trust[k]}).length;if(F.ant)n++;if(F.area)n++;if(F.new)n++;if(F.todo)n++;if(F.nobody)n++;if(F.sort!=='prio')n++;return n}
+function nFilters(){var n=Object.keys(F.trust).filter(function(k){return F.trust[k]}).length+Object.keys(F.role).filter(function(k){return F.role[k]}).length;if(F.ant)n++;if(F.area)n++;if(F.new)n++;if(F.todo)n++;if(F.nobody)n++;if(F.sort!=='prio')n++;return n}
 function ordered(){var a=C.slice();if(F.sort==='dist')a.sort(function(x,y){return (x.near?x.near.km:1e9)-(y.near?y.near.km:1e9)||x.prio-y.prio});return a}
 // ---------- cards ----------
 var UI={offer:{},more:{},log:{},bl:{},ble:{},bld:{},keep:{}},BLM=false;
@@ -105,9 +107,10 @@ function offerSum(r){return '💼 Προσφορά'+(hasOffer(r)?' ✓ κατα�
 function logForm(c){return '<div class="logf" data-logf="1"><label>Ημ/νία & ώρα<input type="datetime-local" class="l-at" value="'+localInput(Date.now())+'"></label><label>Αποτέλεσμα<select class="l-out">'+OUT.map(function(o){return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'}).join('')+'</select></label><label class="w">Σημειώσεις κλήσης<textarea class="l-notes" rows="2" placeholder="τι ειπώθηκε, επόμενο βήμα…"></textarea></label><div class="btns"><button type="button" class="minibtn l-cancel">Άκυρο</button><button type="button" class="minibtn pri l-save">Αποθήκευση</button></div></div>'}
 function callList(r){var cs=((r&&r.calls)||[]).slice().sort(function(a,b){return b.at-a.at});if(!cs.length)return '';
  return '<ul class="calllog">'+cs.map(function(x){var o=outL(x.outcome);return '<li><span class="oc oc-'+o[2]+'">'+esc(o[1])+'</span><div class="cl-t"><time>'+fdt(x.at)+'</time>'+(x.notes?esc(x.notes):'')+'</div><button type="button" class="xbtn l-del" data-id="'+esc(x.id)+'" aria-label="Διαγραφή καταγραφής">×</button></li>'}).join('')+'</ul>'}
+var ROLEI={'Κατασκευαστής':'🏗','Εργολάβος':'🧱','Πολιτικός Μηχανικός':'📐','Γραφείο Μηχανικών':'🏢'};
 function card(c){
  var r=rec(c.name),n=c.name,h='<article class="card tr-'+c.trust+'" id="c'+c.prio+'" data-p="'+c.prio+'">';
- h+='<div class="ch"><div class="row1"><div class="prio">'+c.prio+'</div><div class="hn"><h2>'+esc(n)+'</h2><div class="tags">'+trustB(c)+(c.new?'<span class="tag new">ΝΕΑ</span>':'')+(c.ant?'<span class="tag ant">Αντιπαροχή</span>':'')+(c.aig?'<span class="tag aig">Έργο στο Αιγάλεω</span>':'')+(c.red.length?'<span class="tag flag">⚠ '+c.red.length+'</span>':'')+(r.called?'<span class="tag done">✓ Κάλεσα</span>':'')+'</div></div>'+star(n)+'</div>';
+ h+='<div class="ch"><div class="row1"><div class="prio">'+c.prio+'</div><div class="hn"><h2>'+esc(n)+'</h2><div class="tags">'+trustB(c)+(c.new?'<span class="tag new">Νέο</span>':'')+(c.upd?'<span class="tag upd">Ενημερώθηκε</span>':'')+(c.role?'<span class="tag role">'+esc(ROLEI[c.role]||'')+' '+esc(c.role)+'</span>':'')+(c.ant?'<span class="tag ant">Αντιπαροχή</span>':'')+(c.aig?'<span class="tag aig">Έργο στο Αιγάλεω</span>':'')+(c.red.length?'<span class="tag flag">⚠ '+c.red.length+'</span>':'')+(r.called?'<span class="tag done">✓ Κάλεσα</span>':'')+'</div></div>'+star(n)+'</div>';
  h+='<div class="sum"><b>Περίληψη:</b> '+esc(c.summary||'')+'</div>';
  h+='<div class="dist">'+(c.near?'📏 Πλησιέστερο έργο: <b>'+(c.near.lvl==='exact'?'':'≈ ')+km(c.near.km)+'</b> από το οικόπεδο ('+esc(c.near.label)+(c.near.lvl==='exact'?'':', θέση κατά προσέγγιση')+')':'📏 Κανένα έργο με γνωστή θέση')+'</div>';
  h+=teamLine(c);
@@ -164,9 +167,10 @@ var ft=$('ftoggle'),fl=$('filters');
 ft.addEventListener('click',function(){var o=fl.classList.toggle('open');ft.setAttribute('aria-expanded',o)});
 sel.addEventListener('change',function(){F.area=sel.value;F.only='';render()});
 $('sort').addEventListener('change',function(e){F.sort=e.target.value;render()});
-function resetF(){F={trust:{},ant:'',area:'',new:false,todo:false,nobody:false,q:'',only:'',sort:'prio'};sel.value='';$('sort').value='prio';$('q').value='';fl.querySelectorAll('.chip').forEach(function(x){x.classList.toggle('on',x.dataset.f==='ant'&&x.dataset.v==='')});render()}
+function resetF(){F={trust:{},role:{},ant:'',area:'',new:false,todo:false,nobody:false,q:'',only:'',sort:'prio'};sel.value='';$('sort').value='prio';$('q').value='';fl.querySelectorAll('.chip').forEach(function(x){x.classList.toggle('on',x.dataset.f==='ant'&&x.dataset.v==='')});render()}
 fl.addEventListener('click',function(e){var b=e.target.closest('.chip');if(!b)return;var f=b.dataset.f,v=b.dataset.v;F.only='';
  if(f==='trust'){F.trust[v]=!F.trust[v];b.classList.toggle('on',F.trust[v])}
+ else if(f==='role'){F.role[v]=!F.role[v];b.classList.toggle('on',F.role[v])}
  else if(f==='ant'){F.ant=v;fl.querySelectorAll('[data-f=ant]').forEach(function(x){x.classList.toggle('on',x===b)})}
  else if(f==='new'||f==='todo'||f==='nobody'){F[f]=!F[f];b.classList.toggle('on',F[f])}
  else if(f==='reset'){resetF();return}
@@ -464,6 +468,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=14').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=15').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();

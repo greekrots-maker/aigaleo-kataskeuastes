@@ -58,7 +58,7 @@ main{max-width:760px;margin:0 auto;padding:12px 12px calc(86px + var(--safe-b))}
 .tb:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .t-Υψηλή{background:var(--hi-bg);color:var(--hi)}.t-Μέτρια{background:var(--mid-bg);color:var(--mid)}.t-Άγνωστη{background:var(--unk-bg);color:var(--unk)}.t-Χαμηλή{background:var(--low-bg);color:var(--low)}
 .tag{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11px;font-weight:700;white-space:nowrap}
-.tag.new{background:#E0F2F1;color:#00695C}.tag.ant{background:#E6F4EA;color:var(--hi)}.tag.aig{background:#E7EDF7;color:var(--navy)}.tag.flag{background:var(--low-bg);color:var(--low)}.tag.done{background:#E7EDF7;color:var(--navy)}
+.tag.new{background:#E0F2F1;color:#00695C}.tag.upd{background:#FFF4E5;color:#8A4B00}.tag.role{background:#F1F3F5;color:#37474F;font-weight:600}.tag.ant{background:#E6F4EA;color:var(--hi)}.tag.aig{background:#E7EDF7;color:var(--navy)}.tag.flag{background:var(--low-bg);color:var(--low)}.tag.done{background:#E7EDF7;color:var(--navy)}
 /* cards */
 .card{background:var(--card);border-radius:var(--r);margin:0 0 12px;box-shadow:var(--sh);overflow:hidden;position:relative;scroll-margin-top:150px}
 .card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--unk)}
