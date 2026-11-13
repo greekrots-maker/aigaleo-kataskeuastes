@@ -290,11 +290,61 @@ function renderTeam(){var A=allAcc(),accs=Object.keys(A).filter(function(a){retu
  var bh='';accs.forEach(function(a){var L=Object.keys(A[a]).filter(function(n){var r=A[a][n];return r&&r.bl&&byName(n)});if(L.length)bh+='<div class="tact'+(a===String(ACC)?' me':'')+'"><span class="who">Λογαριασμός '+esc(a)+'</span><br>'+L.map(function(n){var r=A[a][n];return '⛔ '+esc(n)+(r.blr?' – '+esc(r.blr):'')+(r.blu?' <span class="small">(ενημ. '+fdt(r.blu)+')</span>':'')}).join('<br>')+'</div>'});
  if(bh)h+='<div class="tcomp"><h3>⛔ Μαύρες λίστες</h3>'+bh+'</div>';
  $('teamview').innerHTML=h}
+
+// ---------- demolition (v20, independent of builder accounts) ----------
+function demoSorted(){
+  var A=(window.DEMOLITION||[]).slice();
+  A.sort(function(a,b){
+    var ar=a.rating!=null, br=b.rating!=null;
+    if(ar&&!br)return -1; if(!ar&&br)return 1;
+    if(ar&&br){
+      if(b.rating!==a.rating)return b.rating-a.rating;
+      return (b.reviews||0)-(a.reviews||0);
+    }
+    if(a.local&&!b.local)return -1; if(!a.local&&b.local)return 1;
+    return a.name.localeCompare(b.name,'el');
+  });
+  return A;
+}
+function rateTag(c){
+  if(c.rating==null)return '<span class="tag">Χωρίς βαθμολογία Google</span>';
+  var cls=c.rating<3.5?'tag rate rate-low':'tag rate';
+  return '<span class="'+cls+'">★ '+String(c.rating).replace('.',',')+'/5 · '+c.reviews+' κριτικές</span>';
+}
+function demoCard(c,i){
+  var h='<article class="card'+(c.local?' tr-Μέτρια':'')+'" id="d-'+esc(c.id)+'">';
+  h+='<div class="ch"><div class="row1"><div class="prio">'+(i+1)+'</div><div class="hn"><h2>'+esc(c.name)+'</h2><div class="tags">';
+  if(c.local)h+='<span class="tag loc">Δυτ. Αθήνα</span>';
+  h+='<span class="tag">'+esc(c.area)+'</span>'+rateTag(c);
+  if(c.asbestos)h+='<span class="tag warn">Αμίαντος: '+esc(c.asbestos)+'</span>';
+  h+='</div></div></div></div>';
+  if(c.summary)h+='<div class="sum">'+esc(c.summary)+'</div>';
+  if(c.address)h+='<div class="dist">📍 '+esc(c.address)+'</div>';
+  if(c.ratingNote)h+='<p class="small">'+esc(c.ratingNote)+'</p>';
+  if(c.notes)h+='<p class="small">⚠ '+esc(c.notes)+'</p>';
+  if(c.dirRating)h+='<p class="small">'+esc(c.dirRating)+'</p>';
+  if(c.services&&c.services.length)h+='<div class="demo-svc">'+c.services.map(function(s){return '<span>'+esc(s)+'</span>'}).join('')+'</div>';
+  h+='<div class="actions">';
+  (c.phones||[]).forEach(function(p){h+='<a class="btn call" href="tel:'+esc(p.tel)+'">📞 '+esc(fphone(p.tel))+(p.note?' <small>('+esc(p.note)+')</small>':'')+'</a>'});
+  emails(c.email).slice(0,1).forEach(function(e){h+='<a class="btn sec" href="mailto:'+esc(e)+'">✉️ Email</a>'});
+  if(c.web)h+='<a class="btn sec" href="'+esc(c.web)+'" target="_blank" rel="noopener">🌐 Site</a>';
+  h+='</div>';
+  if(c.sources&&c.sources.length){
+    h+='<p class="demo-src">Πηγή: '+c.sources.map(function(s){return '<a href="'+esc(s.url)+'" target="_blank" rel="noopener">'+esc(s.label)+'</a>'}).join(' · ')+'</p>';
+  }
+  return h+'</article>';
+}
+function renderDemo(){
+  var A=demoSorted(), box=$('democards'), n=$('demon'), c=$('democount');
+  if(n)n.textContent=A.length;
+  if(c)c.textContent=A.length+' εταιρείες · πατώντας το τηλέφωνο ανοίγει κλήση';
+  if(box)box.innerHTML=A.map(demoCard).join('');
+}
 // ---------- views ----------
-var cur='list',VIEWS=['list','fav','called','team','map','compare','black','menu'];
+var cur='list',VIEWS=['list','katedaf','fav','called','team','map','compare','black','menu'];
 function show(v){if(VIEWS.indexOf(v)<0)v='list';if(v!=='list'&&Object.keys(UI.keep).length){UI.keep={};listStale=true}if(v==='black'){var bb=$('blback');if(bb)bb.hidden=!BLM}BLM=false;cur=v;VIEWS.forEach(function(x){$('v-'+x).hidden=(x!==v)});document.body.setAttribute('data-view',v);
  document.querySelectorAll('#tabs a').forEach(function(a){var on=a.dataset.v===v||(v==='team'&&a.dataset.v==='menu');a.classList.toggle('on',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
- if(v==='list'&&listStale){listStale=false;render()}if(v==='map')initMap();if(v==='compare')renderCompare();if(v==='fav')renderFav();if(v==='called')renderCalled();if(v==='black')renderBlack();if(v==='team')renderTeam();if(v==='menu')renderMenu();
+ if(v==='list'&&listStale){listStale=false;render()}if(v==='map')initMap();if(v==='compare')renderCompare();if(v==='fav')renderFav();if(v==='called')renderCalled();if(v==='black')renderBlack();if(v==='team')renderTeam();if(v==='menu')renderMenu();if(v==='katedaf')renderDemo();
  if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);window.scrollTo(0,0)}
 $('tabs').addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;e.preventDefault();if(a.dataset.v===cur&&cur==='list'){window.scrollTo({top:0,behavior:'smooth'});return}show(a.dataset.v)});
 window.addEventListener('hashchange',function(){var v=location.hash.slice(1);if(v&&v!==cur)show(v)});
@@ -476,6 +526,6 @@ var h0=location.hash.slice(1);cur=VIEWS.indexOf(h0)>=0?h0:'list';
 if(saved>=1){loadAcct(saved);migrateV4();$('acctn').textContent=saved;render();show(cur);if(Sync.url())Sync.run();else Sync.chip()}
 else{document.body.setAttribute('data-view',cur);askAcct(false)}
 var bt=$('boot');bt.classList.add('gone');setTimeout(function(){bt.remove()},300);
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=19').catch(function(){});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js?v=20').catch(function(){});
 window.__app={recs:function(){return recs},dirty:function(){return dirty},team:function(){return team},acc:function(){return ACC},sync:Sync,show:show,F:F,render:render,login:login};
 })();
